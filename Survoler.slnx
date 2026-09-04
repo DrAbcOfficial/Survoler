@@ -1,0 +1,6 @@
+﻿<Solution>
+  <Project Path="Survoler.Android/Survoler.Android.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="Survoler/Survoler.csproj" />
+</Solution>
