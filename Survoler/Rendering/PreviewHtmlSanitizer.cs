@@ -12,7 +12,11 @@ public static class PreviewHtmlSanitizer
         "script-src 'none'; object-src 'none'; frame-src 'none'; media-src 'none'; " +
         "connect-src 'none'; form-action 'none'; base-uri 'none'";
 
-    public static string Sanitize(string html, bool allowSvg = false)
+    public static string Sanitize(
+        string html,
+        bool allowSvg = false,
+        string? viewportContent = null,
+        string? additionalCss = null)
     {
         var parser = new HtmlParser();
         IDocument document = parser.ParseDocument(html);
@@ -88,6 +92,31 @@ public static class PreviewHtmlSanitizer
         if (document.Head is null)
         {
             document.DocumentElement?.Prepend(head);
+        }
+
+        if (!string.IsNullOrWhiteSpace(viewportContent))
+        {
+            foreach (IElement viewport in document.QuerySelectorAll("meta[name=viewport]").ToArray())
+            {
+                viewport.Remove();
+            }
+
+            IElement viewportElement = document.CreateElement("meta");
+            viewportElement.SetAttribute("name", "viewport");
+            viewportElement.SetAttribute("content", viewportContent);
+            head.Append(viewportElement);
+        }
+
+        if (!string.IsNullOrWhiteSpace(additionalCss))
+        {
+            if (ContainsUnsafeCss(additionalCss))
+            {
+                throw new ArgumentException("Additional preview CSS contains a blocked value.", nameof(additionalCss));
+            }
+
+            IElement style = document.CreateElement("style");
+            style.TextContent = additionalCss;
+            head.Append(style);
         }
 
         IElement csp = document.CreateElement("meta");

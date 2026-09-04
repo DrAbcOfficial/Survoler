@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -65,7 +66,12 @@ public sealed class PresentationDocumentPreview : IDocumentPreview
         cancellationToken.ThrowIfCancellationRequested();
 
         string svg = Encoding.UTF8.GetString(result.Bytes);
-        string html = PreviewHtmlSanitizer.Sanitize(WrapSvg(svg), allowSvg: true);
+        string html = PreviewHtmlSanitizer.Sanitize(
+            WrapSvg(
+                svg,
+                _presentation.SlideSize.WidthPoints,
+                _presentation.SlideSize.HeightPoints),
+            allowSvg: true);
         AddToCache(index, html);
         SelectedIndex = index;
         Html = html;
@@ -105,21 +111,28 @@ public sealed class PresentationDocumentPreview : IDocumentPreview
         RenderTimeout = TimeSpan.FromSeconds(30)
     };
 
-    private static string WrapSvg(string svg) => $$"""
+    private static string WrapSvg(string svg, double widthPoints, double heightPoints)
+    {
+        string width = widthPoints.ToString("0.##", CultureInfo.InvariantCulture);
+        string height = heightPoints.ToString("0.##", CultureInfo.InvariantCulture);
+
+        return $$"""
         <!doctype html>
         <html>
         <head>
           <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+          <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=.25,maximum-scale=5,user-scalable=yes">
           <style>
             html,body{margin:0;min-height:100%;background:#202725;color:#fff}
-            body{display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}
-            svg{display:block;max-width:100%;max-height:calc(100vh - 24px);width:auto;height:auto;box-shadow:0 12px 36px #0008}
+            body{box-sizing:border-box;width:max-content;min-width:100%;min-height:100vh;padding:12px}
+            .survoler-slide-page{box-sizing:border-box;max-width:none;margin:0 auto;background:#fff;box-shadow:0 12px 36px #0008}
+            .survoler-slide-page svg{display:block;width:100%;height:100%;max-width:none;max-height:none}
           </style>
         </head>
-        <body>{{svg}}</body>
+        <body><main class="survoler-slide-page" data-slide-width-points="{{width}}" data-slide-height-points="{{height}}" style="width:{{width}}px;height:{{height}}px">{{svg}}</main></body>
         </html>
         """;
+    }
 
     private void AddToCache(int index, string html)
     {

@@ -13,6 +13,14 @@ namespace Survoler.Rendering;
 public sealed class SpreadsheetDocumentPreview : IDocumentPreview
 {
     private const int MaxCachedSheets = 3;
+    private const string ResponsiveViewport =
+        "width=device-width,initial-scale=1,minimum-scale=.25,maximum-scale=5,user-scalable=yes";
+    private const string ResponsiveSpreadsheetCss = """
+        html{min-width:0}
+        body.officeimo-excel-html{width:100%;min-width:0;min-height:100%;touch-action:pan-x pan-y pinch-zoom}
+        body.officeimo-excel-html .officeimo-sheet{box-sizing:border-box;width:100%;max-width:100%;overflow:auto}
+        body.officeimo-excel-html table.officeimo-table{width:100%;max-width:100%}
+        """;
 
     private readonly ExcelDocument _document;
     private readonly ExcelSheet[] _sheets;
@@ -58,7 +66,10 @@ public sealed class SpreadsheetDocumentPreview : IDocumentPreview
         string html = await Task.Run(() => sheet.ToHtml(options), cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
 
-        html = PreviewHtmlSanitizer.Sanitize(html);
+        html = PreviewHtmlSanitizer.Sanitize(
+            html,
+            viewportContent: ResponsiveViewport,
+            additionalCss: ResponsiveSpreadsheetCss);
         AddToCache(index, html);
         SelectedIndex = index;
         Html = html;
