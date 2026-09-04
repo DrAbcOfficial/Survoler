@@ -15,7 +15,8 @@ public partial class App : Application
 
     public static DocumentPreviewService Previews { get; } = new(
         new WordPreviewRenderer(),
-        new SpreadsheetPreviewRenderer());
+        new SpreadsheetPreviewRenderer(),
+        new PresentationPreviewRenderer());
 
     public static IWebViewPlatformPolicy? WebViewPlatformPolicy { get; set; }
 
