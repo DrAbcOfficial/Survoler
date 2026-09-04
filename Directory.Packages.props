@@ -9,6 +9,9 @@
         <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.2" />
         <PackageVersion Include="Avalonia.Android" Version="12.1.2" />
         <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+        <PackageVersion Include="OfficeIMO.Excel.Html" Version="3.3.0" />
+        <PackageVersion Include="OfficeIMO.PowerPoint" Version="3.3.0" />
+        <PackageVersion Include="OfficeIMO.Word.Html" Version="3.3.0" />
         <PackageVersion Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.15" />
     </ItemGroup>
 </Project>

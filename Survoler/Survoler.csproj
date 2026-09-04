@@ -9,5 +9,8 @@
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="OfficeIMO.Excel.Html" />
+    <PackageReference Include="OfficeIMO.PowerPoint" />
+    <PackageReference Include="OfficeIMO.Word.Html" />
   </ItemGroup>
 </Project>
