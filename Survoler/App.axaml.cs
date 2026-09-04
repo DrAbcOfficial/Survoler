@@ -23,7 +23,7 @@ public partial class App : Application
         {
             activityLifetime.MainViewFactory = () => new MainView
             {
-                DataContext = new MainViewModel()
+                DataContext = new MainViewModel(Activations)
             };
         }
 

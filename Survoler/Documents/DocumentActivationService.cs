@@ -11,8 +11,15 @@ public sealed class DocumentActivationService
 
     public void Publish(IStorageFile file)
     {
-        _pendingFile = file;
-        FileActivated?.Invoke(this, file);
+        EventHandler<IStorageFile>? handler = FileActivated;
+        if (handler is null)
+        {
+            _pendingFile = file;
+            return;
+        }
+
+        _pendingFile = null;
+        handler(this, file);
     }
 
     public bool TryTakePending(out IStorageFile? file)
