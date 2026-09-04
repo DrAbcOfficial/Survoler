@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using Survoler.Documents;
+using Survoler.Rendering;
 using Survoler.ViewModels;
 using Survoler.Views;
 
@@ -11,6 +12,8 @@ namespace Survoler;
 public partial class App : Application
 {
     public static DocumentActivationService Activations { get; } = new();
+
+    public static IWebViewPlatformPolicy? WebViewPlatformPolicy { get; set; }
 
     public override void Initialize()
     {

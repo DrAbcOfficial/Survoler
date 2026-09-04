@@ -35,23 +35,30 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1" Margin="24">
-            <StackPanel HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        MaxWidth="420"
-                        Spacing="16">
-                <TextBlock Text="{Binding StatusText}"
-                           FontSize="17"
-                           Foreground="#263533"
-                           TextAlignment="Center"
-                           TextWrapping="Wrap" />
-                <ProgressBar IsVisible="{Binding IsLoading}"
-                             Minimum="0"
-                             Maximum="1"
-                             Value="{Binding LoadProgress}"
-                             Width="260"
-                             Height="5" />
-            </StackPanel>
+        <Grid Grid.Row="1">
+            <NativeWebView x:Name="PreviewWebView"
+                           IsVisible="{Binding HasPreview}"
+                           Background="#F2EFE7" />
+
+            <Border IsVisible="{Binding IsStatusVisible}"
+                    Margin="24">
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            MaxWidth="420"
+                            Spacing="16">
+                    <TextBlock Text="{Binding StatusText}"
+                               FontSize="17"
+                               Foreground="#263533"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap" />
+                    <ProgressBar IsVisible="{Binding IsLoading}"
+                                 Minimum="0"
+                                 Maximum="1"
+                                 Value="{Binding LoadProgress}"
+                                 Width="260"
+                                 Height="5" />
+                </StackPanel>
+            </Border>
         </Grid>
     </Grid>
 </UserControl>

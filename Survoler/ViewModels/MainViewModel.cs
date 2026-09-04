@@ -42,10 +42,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     public partial DocumentSession? Session { get; set; }
 
+    [ObservableProperty]
+    public partial string? PreviewHtml { get; set; }
+
+    [ObservableProperty]
+    public partial bool HasPreview { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsStatusVisible { get; set; } = true;
+
     public void Dispose()
     {
         _activationService.FileActivated -= OnFileActivated;
         _openCoordinator.Dispose();
+    }
+
+    partial void OnPreviewHtmlChanged(string? value)
+    {
+        HasPreview = !string.IsNullOrWhiteSpace(value);
+        IsStatusVisible = !HasPreview;
     }
 
     private async void OnFileActivated(object? sender, IStorageFile file)
@@ -62,6 +77,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         int openVersion = Interlocked.Increment(ref _openVersion);
         IsLoading = true;
+        PreviewHtml = null;
         FileName = file.Name;
         StatusText = "Copying document...";
         LoadProgress = 0;

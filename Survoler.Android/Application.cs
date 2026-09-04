@@ -2,6 +2,7 @@
 using Android.Runtime;
 using Avalonia;
 using Avalonia.Android;
+using Survoler.Rendering;
 
 namespace Survoler.Android
 {
@@ -14,6 +15,7 @@ namespace Survoler.Android
 
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
+            App.WebViewPlatformPolicy = new AndroidWebViewPlatformPolicy();
             return base.CustomizeAppBuilder(builder);
         }
     }
