@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
+using Survoler.Documents;
 using Survoler.ViewModels;
 using Survoler.Views;
 
@@ -8,6 +10,8 @@ namespace Survoler;
 
 public partial class App : Application
 {
+    public static DocumentActivationService Activations { get; } = new();
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -23,6 +27,28 @@ public partial class App : Application
             };
         }
 
+        if (TryGetFeature(typeof(IActivatableLifetime)) is IActivatableLifetime activatableLifetime)
+        {
+            activatableLifetime.Activated += OnActivated;
+        }
+
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void OnActivated(object? sender, ActivatedEventArgs args)
+    {
+        if (args is not FileActivatedEventArgs fileArgs)
+        {
+            return;
+        }
+
+        foreach (IStorageItem item in fileArgs.Files)
+        {
+            if (item is IStorageFile file)
+            {
+                Activations.Publish(file);
+                return;
+            }
+        }
     }
 }

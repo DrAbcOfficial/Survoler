@@ -1,5 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:installLocation="auto">
-	<uses-permission android:name="android.permission.INTERNET" />
-	<application android:label="Survoler" android:icon="@drawable/Icon" />
+	<application android:label="Survoler" android:allowBackup="false" android:usesCleartextTraffic="false" />
 </manifest>

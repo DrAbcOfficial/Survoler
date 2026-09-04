@@ -12,6 +12,5 @@
         <PackageVersion Include="OfficeIMO.Excel.Html" Version="3.3.0" />
         <PackageVersion Include="OfficeIMO.PowerPoint" Version="3.3.0" />
         <PackageVersion Include="OfficeIMO.Word.Html" Version="3.3.0" />
-        <PackageVersion Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.15" />
     </ItemGroup>
 </Project>
