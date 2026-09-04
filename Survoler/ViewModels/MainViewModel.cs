@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Survoler.Documents;
+using Survoler.Rendering;
 
 namespace Survoler.ViewModels;
 
@@ -11,11 +12,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 {
     private readonly DocumentActivationService _activationService;
     private readonly DocumentOpenCoordinator _openCoordinator = new();
+    private readonly DocumentPreviewService _previewService;
     private int _openVersion;
+    private CancellationTokenSource? _previewCancellation;
+    private IDocumentPreview? _preview;
 
-    public MainViewModel(DocumentActivationService activationService)
+    public MainViewModel(
+        DocumentActivationService activationService,
+        DocumentPreviewService previewService)
     {
         _activationService = activationService;
+        _previewService = previewService;
         _activationService.FileActivated += OnFileActivated;
 
         if (_activationService.TryTakePending(out IStorageFile? pendingFile))
@@ -54,6 +61,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         _activationService.FileActivated -= OnFileActivated;
+        CancellationTokenSource? cancellation = Interlocked.Exchange(ref _previewCancellation, null);
+        cancellation?.Cancel();
+        cancellation?.Dispose();
+        Interlocked.Exchange(ref _preview, null)?.Dispose();
         _openCoordinator.Dispose();
     }
 
@@ -76,6 +87,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
 
         int openVersion = Interlocked.Increment(ref _openVersion);
+        var previewCancellation = new CancellationTokenSource();
+        CancellationTokenSource? previousCancellation = Interlocked.Exchange(
+            ref _previewCancellation,
+            previewCancellation);
+        previousCancellation?.Cancel();
+        Interlocked.Exchange(ref _preview, null)?.Dispose();
+
         IsLoading = true;
         PreviewHtml = null;
         FileName = file.Name;
@@ -100,10 +118,26 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             Session = session;
             IsLegacy = session.IsLegacy;
+            StatusText = "Rendering document...";
+
+            IDocumentPreview preview = await _previewService.CreateAsync(
+                session,
+                previewCancellation.Token);
+
+            if (openVersion != Volatile.Read(ref _openVersion) ||
+                !ReferenceEquals(_previewCancellation, previewCancellation))
+            {
+                preview.Dispose();
+                return;
+            }
+
+            _preview = preview;
+            PreviewHtml = preview.Html;
             LoadProgress = 1;
-            StatusText = session.IsLegacy
-                ? "Compatibility mode. Some content may be omitted."
-                : "Document is ready for rendering.";
+            StatusText = string.Empty;
+        }
+        catch (OperationCanceledException) when (previewCancellation.IsCancellationRequested)
+        {
         }
         catch (DocumentOpenException exception)
         {
@@ -130,6 +164,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (openVersion == Volatile.Read(ref _openVersion))
             {
                 IsLoading = false;
+            }
+
+            if (!ReferenceEquals(_previewCancellation, previewCancellation))
+            {
+                previewCancellation.Dispose();
             }
         }
     }

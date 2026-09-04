@@ -13,6 +13,8 @@ public partial class App : Application
 {
     public static DocumentActivationService Activations { get; } = new();
 
+    public static DocumentPreviewService Previews { get; } = new(new WordPreviewRenderer());
+
     public static IWebViewPlatformPolicy? WebViewPlatformPolicy { get; set; }
 
     public override void Initialize()
@@ -26,7 +28,7 @@ public partial class App : Application
         {
             activityLifetime.MainViewFactory = () => new MainView
             {
-                DataContext = new MainViewModel(Activations)
+                DataContext = new MainViewModel(Activations, Previews)
             };
         }
 
