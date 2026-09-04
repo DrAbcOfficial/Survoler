@@ -5,7 +5,7 @@
     <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
     <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
     <Nullable>enable</Nullable>
-    <ApplicationId>app.survoler.viewer</ApplicationId>
+    <ApplicationId>net.drabc.survoler</ApplicationId>
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <AndroidPackageFormats>apk</AndroidPackageFormats>
@@ -20,5 +20,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Survoler\Survoler.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AndroidResource Include="..\Survoler\Assets\icon.png"
+                     Link="Resources\mipmap\survoler_icon.png" />
+    <AndroidResource Include="..\Survoler\Assets\icon_trans.png"
+                     Link="Resources\drawable-nodpi\survoler_icon_foreground_source.png" />
   </ItemGroup>
 </Project>
