@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Survoler.Documents;
 using Survoler.Rendering;
 
@@ -15,7 +17,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly DocumentPreviewService _previewService;
     private int _openVersion;
     private CancellationTokenSource? _previewCancellation;
+    private CancellationTokenSource? _navigationCancellation;
     private IDocumentPreview? _preview;
+    private bool _settingNavigationIndex;
 
     public MainViewModel(
         DocumentActivationService activationService,
@@ -58,12 +62,35 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     public partial bool IsStatusVisible { get; set; } = true;
 
+    [ObservableProperty]
+    public partial IReadOnlyList<string> NavigationItems { get; set; } = Array.Empty<string>();
+
+    [ObservableProperty]
+    public partial int SelectedNavigationIndex { get; set; } = -1;
+
+    [ObservableProperty]
+    public partial string NavigationPosition { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool HasNavigation { get; set; }
+
+    [ObservableProperty]
+    public partial bool CanNavigatePrevious { get; set; }
+
+    [ObservableProperty]
+    public partial bool CanNavigateNext { get; set; }
+
     public void Dispose()
     {
         _activationService.FileActivated -= OnFileActivated;
         CancellationTokenSource? cancellation = Interlocked.Exchange(ref _previewCancellation, null);
         cancellation?.Cancel();
         cancellation?.Dispose();
+        CancellationTokenSource? navigationCancellation = Interlocked.Exchange(
+            ref _navigationCancellation,
+            null);
+        navigationCancellation?.Cancel();
+        navigationCancellation?.Dispose();
         Interlocked.Exchange(ref _preview, null)?.Dispose();
         _openCoordinator.Dispose();
     }
@@ -73,6 +100,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HasPreview = !string.IsNullOrWhiteSpace(value);
         IsStatusVisible = !HasPreview;
     }
+
+    partial void OnSelectedNavigationIndexChanged(int value)
+    {
+        if (!_settingNavigationIndex && _preview is not null && value >= 0)
+        {
+            _ = SelectNavigationItemAsync(value);
+        }
+    }
+
+    [RelayCommand]
+    private Task NavigatePreviousAsync() =>
+        SelectNavigationItemAsync(SelectedNavigationIndex - 1);
+
+    [RelayCommand]
+    private Task NavigateNextAsync() =>
+        SelectNavigationItemAsync(SelectedNavigationIndex + 1);
 
     private async void OnFileActivated(object? sender, IStorageFile file)
     {
@@ -92,6 +135,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ref _previewCancellation,
             previewCancellation);
         previousCancellation?.Cancel();
+        CancellationTokenSource? previousNavigation = Interlocked.Exchange(
+            ref _navigationCancellation,
+            null);
+        previousNavigation?.Cancel();
         Interlocked.Exchange(ref _preview, null)?.Dispose();
 
         IsLoading = true;
@@ -99,6 +146,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         FileName = file.Name;
         StatusText = "Copying document...";
         LoadProgress = 0;
+        SetNavigation(Array.Empty<string>(), -1);
 
         try
         {
@@ -133,6 +181,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             _preview = preview;
             PreviewHtml = preview.Html;
+            SetNavigation(preview.NavigationItems, preview.SelectedIndex);
             LoadProgress = 1;
             StatusText = string.Empty;
         }
@@ -161,15 +210,82 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
         finally
         {
-            if (openVersion == Volatile.Read(ref _openVersion))
+            bool isCurrentRequest = ReferenceEquals(_previewCancellation, previewCancellation);
+            if (isCurrentRequest)
             {
+                Interlocked.CompareExchange(ref _previewCancellation, null, previewCancellation);
                 IsLoading = false;
             }
 
-            if (!ReferenceEquals(_previewCancellation, previewCancellation))
+            previewCancellation.Dispose();
+        }
+    }
+
+    private async Task SelectNavigationItemAsync(int index)
+    {
+        IDocumentPreview? preview = _preview;
+        if (preview is null || (uint)index >= (uint)preview.NavigationItems.Count)
+        {
+            return;
+        }
+
+        var cancellation = new CancellationTokenSource();
+        CancellationTokenSource? previousCancellation = Interlocked.Exchange(
+            ref _navigationCancellation,
+            cancellation);
+        previousCancellation?.Cancel();
+        IDocumentPreview expectedPreview = preview;
+
+        try
+        {
+            IsLoading = true;
+            string html = await preview.SelectAsync(index, cancellation.Token);
+
+            if (!ReferenceEquals(_preview, expectedPreview) ||
+                !ReferenceEquals(_navigationCancellation, cancellation))
             {
-                previewCancellation.Dispose();
+                return;
+            }
+
+            PreviewHtml = html;
+            SetNavigation(preview.NavigationItems, preview.SelectedIndex);
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
+        catch (Exception)
+        {
+            if (ReferenceEquals(_preview, expectedPreview))
+            {
+                StatusText = "This section could not be rendered.";
             }
         }
+        finally
+        {
+            bool isCurrentNavigation = ReferenceEquals(_navigationCancellation, cancellation);
+            if (isCurrentNavigation)
+            {
+                Interlocked.CompareExchange(ref _navigationCancellation, null, cancellation);
+                IsLoading = false;
+            }
+
+            cancellation.Dispose();
+        }
+    }
+
+    private void SetNavigation(IReadOnlyList<string> items, int selectedIndex)
+    {
+        NavigationItems = items;
+        HasNavigation = items.Count > 1;
+
+        _settingNavigationIndex = true;
+        SelectedNavigationIndex = selectedIndex;
+        _settingNavigationIndex = false;
+
+        NavigationPosition = selectedIndex >= 0 && items.Count > 0
+            ? $"{selectedIndex + 1} / {items.Count}"
+            : string.Empty;
+        CanNavigatePrevious = selectedIndex > 0;
+        CanNavigateNext = selectedIndex >= 0 && selectedIndex < items.Count - 1;
     }
 }

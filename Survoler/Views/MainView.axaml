@@ -6,7 +6,7 @@
               mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
               x:Class="Survoler.Views.MainView"
               x:DataType="vm:MainViewModel">
-    <Grid Background="#F2EFE7" RowDefinitions="Auto,*">
+    <Grid Background="#F2EFE7" RowDefinitions="Auto,Auto,*">
         <Border Grid.Row="0" Background="#152B2A" Padding="20,16">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Spacing="3">
@@ -35,7 +35,39 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1">
+        <Border Grid.Row="1"
+                IsVisible="{Binding HasNavigation}"
+                Background="#E2DED3"
+                BorderBrush="#C9C2B4"
+                BorderThickness="0,0,0,1"
+                Padding="12,8">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
+                <Button Grid.Column="0"
+                        Content="PREV"
+                        Command="{Binding NavigatePreviousCommand}"
+                        IsEnabled="{Binding CanNavigatePrevious}" />
+                <ComboBox Grid.Column="1"
+                          ItemsSource="{Binding NavigationItems}"
+                          SelectedIndex="{Binding SelectedNavigationIndex, Mode=TwoWay}"
+                          HorizontalAlignment="Stretch" />
+                <TextBlock Grid.Column="2"
+                           Text="{Binding NavigationPosition}"
+                           VerticalAlignment="Center"
+                           Foreground="#47514F" />
+                <ProgressBar Grid.Column="3"
+                             IsVisible="{Binding IsLoading}"
+                             IsIndeterminate="True"
+                             Width="32"
+                             Height="4"
+                             VerticalAlignment="Center" />
+                <Button Grid.Column="4"
+                        Content="NEXT"
+                        Command="{Binding NavigateNextCommand}"
+                        IsEnabled="{Binding CanNavigateNext}" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
             <NativeWebView x:Name="PreviewWebView"
                            IsVisible="{Binding HasPreview}"
                            Background="#F2EFE7" />

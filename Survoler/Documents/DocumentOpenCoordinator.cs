@@ -109,11 +109,13 @@ public sealed class DocumentOpenCoordinator : IDisposable
 
             lock (_sync)
             {
-                if (!ReferenceEquals(_requestCancellation, requestCancellation))
+                if (ReferenceEquals(_requestCancellation, requestCancellation))
                 {
-                    requestCancellation.Dispose();
+                    _requestCancellation = null;
                 }
             }
+
+            requestCancellation.Dispose();
         }
     }
 
