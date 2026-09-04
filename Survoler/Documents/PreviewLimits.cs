@@ -27,9 +27,10 @@ public static class PreviewLimits
         MaxXmlCharactersInPart = MaxPartBytes,
         MaxTotalUncompressedBytes = MaxTotalUncompressedBytes,
         MaxCompressionRatio = MaxCompressionRatio,
-        Macros = OfficePackageContentPolicy.Reject,
-        EmbeddedPayloads = OfficePackageContentPolicy.Reject,
-        ActiveX = OfficePackageContentPolicy.Reject,
+        // OfficeIMO inventories active content but never executes it during preview.
+        Macros = OfficePackageContentPolicy.Allow,
+        EmbeddedPayloads = OfficePackageContentPolicy.Allow,
+        ActiveX = OfficePackageContentPolicy.Allow,
         ExternalRelationships = OfficePackageContentPolicy.Allow
     };
 }

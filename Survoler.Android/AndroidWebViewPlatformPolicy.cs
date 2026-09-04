@@ -57,7 +57,7 @@ public sealed class AndroidWebViewPlatformPolicy : IWebViewPlatformPolicy
 
         if (OperatingSystem.IsAndroidVersionAtLeast(26))
         {
-            settings.SafeBrowsingEnabled = true;
+            settings.SafeBrowsingEnabled = false;
         }
 
         CookieManager.Instance?.SetAcceptThirdPartyCookies(webView, false);
