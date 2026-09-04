@@ -19,6 +19,7 @@ public sealed class PresentationDocumentPreview : IDocumentPreview
     private readonly IReadOnlyList<string> _navigationItems;
     private readonly Dictionary<int, string> _htmlCache = new();
     private readonly Queue<int> _cacheOrder = new();
+    private int _disposed;
 
     public PresentationDocumentPreview(
         PowerPointPresentation presentation,
@@ -73,6 +74,11 @@ public sealed class PresentationDocumentPreview : IDocumentPreview
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
         _htmlCache.Clear();
         _cacheOrder.Clear();
         _presentation.Dispose();

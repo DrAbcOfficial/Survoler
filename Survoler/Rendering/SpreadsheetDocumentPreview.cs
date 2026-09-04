@@ -19,6 +19,7 @@ public sealed class SpreadsheetDocumentPreview : IDocumentPreview
     private readonly IReadOnlyList<string> _navigationItems;
     private readonly Dictionary<int, string> _htmlCache = new();
     private readonly Queue<int> _cacheOrder = new();
+    private int _disposed;
 
     public SpreadsheetDocumentPreview(ExcelDocument document, ExcelSheet[] sheets)
     {
@@ -66,6 +67,11 @@ public sealed class SpreadsheetDocumentPreview : IDocumentPreview
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
         _htmlCache.Clear();
         _cacheOrder.Clear();
         _document.Dispose();

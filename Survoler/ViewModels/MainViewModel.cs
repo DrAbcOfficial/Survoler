@@ -90,8 +90,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ref _navigationCancellation,
             null);
         navigationCancellation?.Cancel();
-        navigationCancellation?.Dispose();
-        Interlocked.Exchange(ref _preview, null)?.Dispose();
+        IDocumentPreview? preview = Interlocked.Exchange(ref _preview, null);
+        if (navigationCancellation is null)
+        {
+            preview?.Dispose();
+        }
         _openCoordinator.Dispose();
     }
 
@@ -139,7 +142,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ref _navigationCancellation,
             null);
         previousNavigation?.Cancel();
-        Interlocked.Exchange(ref _preview, null)?.Dispose();
+        IDocumentPreview? previousPreview = Interlocked.Exchange(ref _preview, null);
+        if (previousNavigation is null)
+        {
+            previousPreview?.Dispose();
+        }
 
         IsLoading = true;
         PreviewHtml = null;
@@ -270,6 +277,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
 
             cancellation.Dispose();
+
+            if (!ReferenceEquals(_preview, expectedPreview))
+            {
+                expectedPreview.Dispose();
+            }
         }
     }
 
