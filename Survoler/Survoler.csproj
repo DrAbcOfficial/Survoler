@@ -7,11 +7,10 @@
 
   <ItemGroup>
     <PackageReference Include="Avalonia" />
-    <PackageReference Include="Avalonia.Controls.WebView" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
-    <PackageReference Include="OfficeIMO.Excel.Html" />
-    <PackageReference Include="OfficeIMO.PowerPoint" />
-    <PackageReference Include="OfficeIMO.Word.Html" />
+    <PackageReference Include="OfficeIMO.Excel.Pdf" />
+    <PackageReference Include="OfficeIMO.PowerPoint.Pdf" />
+    <PackageReference Include="OfficeIMO.Word.Pdf" />
   </ItemGroup>
 </Project>

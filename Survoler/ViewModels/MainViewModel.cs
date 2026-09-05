@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Survoler.Documents;
@@ -54,10 +55,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial DocumentSession? Session { get; set; }
 
     [ObservableProperty]
-    public partial string? PreviewHtml { get; set; }
+    public partial Bitmap? PreviewImage { get; set; }
 
     [ObservableProperty]
     public partial bool HasPreview { get; set; }
+
+    [ObservableProperty]
+    public partial string? PreviewWarning { get; set; }
+
+    [ObservableProperty]
+    public partial bool HasPreviewWarning { get; set; }
 
     [ObservableProperty]
     public partial bool IsStatusVisible { get; set; } = true;
@@ -80,6 +87,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     public partial bool CanNavigateNext { get; set; }
 
+    [ObservableProperty]
+    public partial bool IsFitToView { get; set; } = true;
+
+    [ObservableProperty]
+    public partial string FitButtonText { get; set; } = "100%";
+
     public void Dispose()
     {
         _activationService.FileActivated -= OnFileActivated;
@@ -98,10 +111,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _openCoordinator.Dispose();
     }
 
-    partial void OnPreviewHtmlChanged(string? value)
+    partial void OnPreviewImageChanged(Bitmap? value)
     {
-        HasPreview = !string.IsNullOrWhiteSpace(value);
+        HasPreview = value is not null;
         IsStatusVisible = !HasPreview;
+    }
+
+    partial void OnPreviewWarningChanged(string? value)
+    {
+        HasPreviewWarning = !string.IsNullOrWhiteSpace(value);
     }
 
     partial void OnSelectedNavigationIndexChanged(int value)
@@ -119,6 +137,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private Task NavigateNextAsync() =>
         SelectNavigationItemAsync(SelectedNavigationIndex + 1);
+
+    [RelayCommand]
+    private void ToggleFit()
+    {
+        IsFitToView = !IsFitToView;
+        FitButtonText = IsFitToView ? "100%" : "FIT";
+    }
 
     private async void OnFileActivated(object? sender, IStorageFile file)
     {
@@ -143,16 +168,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             null);
         previousNavigation?.Cancel();
         IDocumentPreview? previousPreview = Interlocked.Exchange(ref _preview, null);
+        PreviewImage = null;
+        PreviewWarning = null;
         if (previousNavigation is null)
         {
             previousPreview?.Dispose();
         }
 
         IsLoading = true;
-        PreviewHtml = null;
         FileName = file.Name;
         StatusText = "Copying document...";
         LoadProgress = 0;
+        IsFitToView = true;
+        FitButtonText = "100%";
         SetNavigation(Array.Empty<string>(), -1);
 
         try
@@ -173,7 +201,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             Session = session;
             IsLegacy = session.IsLegacy;
-            StatusText = "Rendering document...";
+            StatusText = "Converting document to PDF...";
 
             IDocumentPreview preview = await _previewService.CreateAsync(
                 session,
@@ -187,7 +215,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
 
             _preview = preview;
-            PreviewHtml = preview.Html;
+            PreviewImage = preview.PageImage;
+            PreviewWarning = preview.WarningText;
             SetNavigation(preview.NavigationItems, preview.SelectedIndex);
             LoadProgress = 1;
             StatusText = string.Empty;
@@ -246,7 +275,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             IsLoading = true;
-            string html = await preview.SelectAsync(index, cancellation.Token);
+            Bitmap image = await preview.SelectAsync(index, cancellation.Token);
 
             if (!ReferenceEquals(_preview, expectedPreview) ||
                 !ReferenceEquals(_navigationCancellation, cancellation))
@@ -254,7 +283,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 return;
             }
 
-            PreviewHtml = html;
+            PreviewImage = image;
+            PreviewWarning = preview.WarningText;
             SetNavigation(preview.NavigationItems, preview.SelectedIndex);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
@@ -264,7 +294,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             if (ReferenceEquals(_preview, expectedPreview))
             {
-                StatusText = "This section could not be rendered.";
+                PreviewWarning = "This PDF page could not be rendered.";
             }
         }
         finally

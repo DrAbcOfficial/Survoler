@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -13,14 +14,11 @@ public partial class App : Application
 {
     public static DocumentActivationService Activations { get; } = new();
 
-    public static DocumentPreviewService Previews { get; } = new(
-        new WordPreviewRenderer(),
-        new SpreadsheetPreviewRenderer(),
-        new PresentationPreviewRenderer());
-
-    public static IWebViewPlatformPolicy? WebViewPlatformPolicy { get; set; }
+    public static DocumentPreviewService Previews { get; private set; } = null!;
 
     public static IPdfPageRendererFactory? PdfPageRendererFactory { get; set; }
+
+    public static IOfficePdfRenderingResourcesProvider? OfficePdfRenderingResourcesProvider { get; set; }
 
     public override void Initialize()
     {
@@ -29,6 +27,13 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        IPdfPageRendererFactory pageRendererFactory = PdfPageRendererFactory
+            ?? throw new InvalidOperationException("A PDF page renderer is required.");
+        Previews = new DocumentPreviewService(
+            new OfficePdfPreviewRenderer(
+                new OfficePdfConverter(OfficePdfRenderingResourcesProvider),
+                pageRendererFactory));
+
         if (ApplicationLifetime is IActivityApplicationLifetime activityLifetime)
         {
             activityLifetime.MainViewFactory = () => new MainView

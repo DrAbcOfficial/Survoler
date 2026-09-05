@@ -6,7 +6,7 @@
               mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
               x:Class="Survoler.Views.MainView"
               x:DataType="vm:MainViewModel">
-    <Grid Background="#F2EFE7" RowDefinitions="Auto,Auto,*">
+    <Grid Background="#F2EFE7" RowDefinitions="Auto,Auto,Auto,*">
         <Border Grid.Row="0" Background="#152B2A" Padding="20,16">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Spacing="3">
@@ -36,12 +36,12 @@
         </Border>
 
         <Border Grid.Row="1"
-                IsVisible="{Binding HasNavigation}"
+                IsVisible="{Binding HasPreview}"
                 Background="#E2DED3"
                 BorderBrush="#C9C2B4"
                 BorderThickness="0,0,0,1"
                 Padding="12,8">
-            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
                 <Button Grid.Column="0"
                         Content="PREV"
                         Command="{Binding NavigatePreviousCommand}"
@@ -64,13 +64,48 @@
                         Content="NEXT"
                         Command="{Binding NavigateNextCommand}"
                         IsEnabled="{Binding CanNavigateNext}" />
+                <Button Grid.Column="5"
+                        Content="{Binding FitButtonText}"
+                        Command="{Binding ToggleFitCommand}" />
             </Grid>
         </Border>
 
-        <Grid Grid.Row="2">
-            <NativeWebView x:Name="PreviewWebView"
-                           IsVisible="{Binding HasPreview}"
-                           Background="#F2EFE7" />
+        <Border Grid.Row="2"
+                IsVisible="{Binding HasPreviewWarning}"
+                Background="#F3D78B"
+                BorderBrush="#C79C38"
+                BorderThickness="0,0,0,1"
+                Padding="14,9">
+            <TextBlock Text="{Binding PreviewWarning}"
+                       Foreground="#42340F"
+                       FontSize="12"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap" />
+        </Border>
+
+        <Grid Grid.Row="3">
+            <Grid IsVisible="{Binding HasPreview}">
+                <Border IsVisible="{Binding IsFitToView}"
+                        Background="#303634"
+                        Padding="12">
+                    <Image Source="{Binding PreviewImage}"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Stretch"
+                           VerticalAlignment="Stretch" />
+                </Border>
+
+                <ScrollViewer IsVisible="{Binding !IsFitToView}"
+                              Background="#303634"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto">
+                    <Border Padding="16">
+                        <Image Source="{Binding PreviewImage}"
+                               Stretch="None"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Top" />
+                    </Border>
+                </ScrollViewer>
+            </Grid>
 
             <Border IsVisible="{Binding IsStatusVisible}"
                     Margin="24">
