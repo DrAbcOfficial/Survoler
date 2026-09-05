@@ -314,7 +314,7 @@ public sealed class OfdPreviewTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task RepeatedEmbeddedFontReferencesShareUnicodeMap(bool chinese)
+    public async Task RepeatedEmbeddedFontReferencesReuseUnicodeMaps(bool chinese)
     {
         // Noto CJK maps U+6587 and U+2F42 to the same glyph: preserve their distinct source text.
         string text = chinese ? "\u4E2D\u6587\u2F42\u6587" : "AlphaBeta";
@@ -335,7 +335,14 @@ public sealed class OfdPreviewTests
         byte[] pdf = File.ReadAllBytes(converted.Path);
         Assert.AreEqual(text + text, Regex.Replace(PdfReadDocument.Open(converted.Path).ExtractText(), @"\s", ""));
         Assert.AreEqual(text + text, string.Concat(PdfPageInteractionMap.Create(pdf, 1).TextRegions.Select(r => r.Text)));
-        Assert.AreEqual(1, Regex.Matches(Encoding.Latin1.GetString(pdf), @"/ToUnicode \d+ 0 R").Count);
+        // Distinct source scalars sharing a glyph may need separate PDF font subsets.
+        // A second reference should reuse those maps rather than duplicate the resources.
+        Set(parts, "Doc/Page.xml", Page(Text.Replace("ABCD", text)));
+        using DocumentSession singleUse = Session(Zip(parts));
+        using ConvertedPdfDocument singlePdf = await new OfficePdfConverter().ConvertAsync(singleUse, CancellationToken.None);
+        int singleMapCount = Regex.Matches(Encoding.Latin1.GetString(File.ReadAllBytes(singlePdf.Path)), @"/ToUnicode \d+ 0 R").Count;
+        Assert.IsGreaterThan(0, singleMapCount);
+        Assert.AreEqual(singleMapCount, Regex.Matches(Encoding.Latin1.GetString(pdf), @"/ToUnicode \d+ 0 R").Count);
     }
 
     [TestMethod]
