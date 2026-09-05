@@ -27,13 +27,18 @@ public sealed class AndroidPdfPageRendererFactory : IPdfPageRendererFactory
 internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
 {
     private readonly PdfRenderer _renderer;
+    private readonly ParcelFileDescriptor _descriptor;
     private readonly SemaphoreSlim _renderGate = new(1, 1);
     private readonly int _targetWidth;
     private int _disposed;
 
-    private AndroidPdfPageRenderer(PdfRenderer renderer, int targetWidth)
+    private AndroidPdfPageRenderer(
+        PdfRenderer renderer,
+        ParcelFileDescriptor descriptor,
+        int targetWidth)
     {
         _renderer = renderer;
+        _descriptor = descriptor;
         _targetWidth = targetWidth;
     }
 
@@ -58,7 +63,6 @@ internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
             }
 
             renderer = new PdfRenderer(descriptor);
-            descriptor = null;
 
             if (renderer.PageCount == 0)
             {
@@ -76,7 +80,10 @@ internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
                 PreviewLimits.MaxPdfPageWidth,
                 Math.Max(1_024, checked(screenWidth * 2)));
 
-            return new AndroidPdfPageRenderer(renderer, targetWidth);
+            var result = new AndroidPdfPageRenderer(renderer, descriptor, targetWidth);
+            renderer = null;
+            descriptor = null;
+            return result;
         }
         catch
         {
@@ -120,7 +127,14 @@ internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
         _renderGate.Wait();
         try
         {
-            _renderer.Dispose();
+            try
+            {
+                _renderer.Dispose();
+            }
+            finally
+            {
+                _descriptor.Dispose();
+            }
         }
         finally
         {
