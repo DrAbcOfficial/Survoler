@@ -11,7 +11,7 @@ $runtime = "android-arm64"
 $output = Join-Path $root "Survoler.Android\bin\$Configuration\$framework\$runtime"
 $intermediate = Join-Path $root "Survoler.Android\obj\$Configuration\$framework\$runtime"
 $manifestPath = Join-Path $intermediate "android\AndroidManifest.xml"
-$apkPath = Join-Path $output "app.survoler.viewer-Signed.apk"
+$apkPath = Join-Path $output "net.drabc.survoler-Signed.apk"
 
 & dotnet publish $project -c $Configuration -f $framework -r $runtime
 if ($LASTEXITCODE -ne 0) {
@@ -30,8 +30,7 @@ $manifest = [System.IO.File]::ReadAllText($manifestPath)
 $forbiddenManifestValues = @(
     "android.intent.action.MAIN",
     "android.intent.category.LAUNCHER",
-    "android.permission.INTERNET",
-    "android:icon="
+    "android.permission.INTERNET"
 )
 
 foreach ($value in $forbiddenManifestValues) {
@@ -51,6 +50,7 @@ $requiredManifestValues = @(
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     'android:scheme="content"',
     'android:exported="true"',
+    'android:icon=',
     'android:minSdkVersion="23"',
     'android:targetSdkVersion="36"'
 )
