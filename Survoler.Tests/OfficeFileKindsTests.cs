@@ -40,6 +40,8 @@ public sealed class OfficeFileKindsTests
     [DataRow("report.XLAM", OfficeFileKind.Xlsx, OfficeDocumentFamily.Spreadsheet, false)]
     [DataRow("report.pptm", OfficeFileKind.Pptx, OfficeDocumentFamily.Presentation, false)]
     [DataRow("report.PPTM", OfficeFileKind.Pptx, OfficeDocumentFamily.Presentation, false)]
+    [DataRow("report.csv", OfficeFileKind.Csv, OfficeDocumentFamily.Spreadsheet, false)]
+    [DataRow("report.CSV", OfficeFileKind.Csv, OfficeDocumentFamily.Spreadsheet, false)]
     public void RecognizesSupportedExtensions(
         string fileName,
         OfficeFileKind expectedKind,

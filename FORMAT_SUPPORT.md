@@ -40,6 +40,40 @@ types. No generic MIME wildcard is added.
 
 ## Boundaries
 
+### CSV
+
+CSV is imported into a detached text-only workbook and rendered with the existing
+spreadsheet PDF pipeline. It does not require an OLE/ZIP signature.
+
+- Accepted encoding: strict UTF-8 with or without BOM, or UTF-16 LE/BE with BOM.
+  Invalid bytes, UTF-32, and legacy encodings such as GBK are not auto-detected or
+  silently replaced. Files in other encodings must be converted to UTF-8 first.
+- The delimiter is a comma. Quoted commas, doubled quote escapes, multiline
+  fields, empty fields, and trailing empty columns are supported. Blank lines are
+  skipped; short rows remain short. Semicolons and tabs remain field text, not
+  alternative delimiters. There is no locale-dependent delimiter guessing.
+- Values stay text, preserving leading zeros, large identifiers, date-like
+  strings, and formula-like text. CSV fields never become spreadsheet formulas.
+  Logical field line breaks are preserved, with CRLF normalized in workbook XML.
+- Cells use bounded column widths, wrapping, and automatic row heights. Extremely
+  wide or long tables may span multiple PDF pages and are not guaranteed to match
+  a desktop spreadsheet application's print layout.
+- The existing 64 MiB input ceiling remains. CSV additionally permits at most
+  10,000 nonblank records, 256 columns per record, 100,000 fields total, and 32,767
+  characters per field. Exceeding a limit fails explicitly rather than truncating
+  silently. Empty files, malformed quoted records, and XML-incompatible control
+  characters produce an error.
+- Android accepts `text/csv`, `text/comma-separated-values`, `application/csv`,
+  and the existing Excel MIME type when the filename ends in `.csv`. Generic
+  `text/plain` and wildcard MIME types are not claimed.
+
+`CsvPreviewTests` covers parsing, Chinese decoding in all supported encodings,
+literal cell types/no formulas, invalid input, resource limits, cancellation,
+and CSV activation through readable/selectable PDF output without changing the
+source. Legacy code pages and alternate-delimiter files are outside this scope.
+
+### Binary And OpenXML
+
 - These are extension aliases for compatible Microsoft binary content, not new
   proprietary-format parsers. Templates are previewed, not instantiated or saved.
 - The open coordinator requires the complete OLE compound-file signature for

@@ -174,6 +174,12 @@ public sealed class DocumentOpenCoordinator : IDisposable
         OfficeFileKind kind,
         CancellationToken cancellationToken)
     {
+        // CSV has no container signature; its decoder/parser validates text during conversion.
+        if (kind == OfficeFileKind.Csv)
+        {
+            return;
+        }
+
         byte[] header = new byte[8];
         await using var stream = new FileStream(
             path,

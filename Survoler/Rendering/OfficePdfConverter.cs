@@ -72,8 +72,8 @@ public sealed class OfficePdfConverter
         {
             OfficeFileKind.Doc or OfficeFileKind.Docx =>
                 ConvertWord(session.LocalPath, pdfPath, resources),
-            OfficeFileKind.Xls or OfficeFileKind.Xlsx =>
-                ConvertSpreadsheet(session.LocalPath, pdfPath, resources),
+            OfficeFileKind.Xls or OfficeFileKind.Xlsx or OfficeFileKind.Csv =>
+                ConvertSpreadsheet(session, pdfPath, resources, cancellationToken),
             OfficeFileKind.Ppt or OfficeFileKind.Pptx =>
                 ConvertPresentation(session.LocalPath, pdfPath, resources),
             _ => throw new NotSupportedException("No PDF converter is available for this file.")
@@ -106,9 +106,10 @@ public sealed class OfficePdfConverter
     }
 
     private static PdfSaveResult ConvertSpreadsheet(
-        string inputPath,
+        DocumentSession session,
         string pdfPath,
-        OfficePdfRenderingResources? resources)
+        OfficePdfRenderingResources? resources,
+        CancellationToken cancellationToken)
     {
         var loadOptions = new ExcelLoadOptions
         {
@@ -117,7 +118,9 @@ public sealed class OfficePdfConverter
             MaxInputBytes = PreviewLimits.MaxInputBytes,
             PackageSecurity = PreviewLimits.CreatePackageSecurity()
         };
-        using ExcelDocument document = ExcelDocument.Load(inputPath, loadOptions);
+        using ExcelDocument document = session.Kind == OfficeFileKind.Csv
+            ? CsvWorkbookReader.Load(session.LocalPath, cancellationToken)
+            : ExcelDocument.Load(session.LocalPath, loadOptions);
 
         var options = new ExcelPdfSaveOptions();
         options.UseProfile(PdfExportProfile.Faithful);
