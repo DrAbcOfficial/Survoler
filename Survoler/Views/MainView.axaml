@@ -1,8 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="using:Survoler.ViewModels"
+              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+              xmlns:vm="using:Survoler.ViewModels"
+              xmlns:input="using:Avalonia.Input"
+              xmlns:gestures="using:Avalonia.Input.GestureRecognizers"
               mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
               x:Class="Survoler.Views.MainView"
               x:DataType="vm:MainViewModel">
@@ -82,27 +84,43 @@
         </Border>
 
         <Grid Grid.Row="3">
-            <Grid IsVisible="{Binding HasPreview}">
-                <Border IsVisible="{Binding IsFitToView}"
-                        Background="#303634"
-                        Padding="12">
-                    <Image Source="{Binding PreviewImage}"
-                           Stretch="Uniform"
-                           HorizontalAlignment="Stretch"
-                           VerticalAlignment="Stretch" />
-                </Border>
+            <Grid x:Name="PreviewViewport"
+                  IsVisible="{Binding HasPreview}"
+                  Background="#303634"
+                  ClipToBounds="True"
+                  input:InputElement.IsHoldingEnabled="True"
+                  Holding="OnHolding"
+                  PointerPressed="OnPointerPressed"
+                  PointerMoved="OnPointerMoved"
+                  PointerReleased="OnPointerReleased"
+                  PointerCaptureLost="OnPointerCaptureLost"
+                  Pinch="OnPinch"
+                  PinchEnded="OnPinchEnded"
+                  SwipeGesture="OnSwipeGesture"
+                  SwipeGestureEnded="OnSwipeGestureEnded"
+                  SizeChanged="OnViewportSizeChanged">
+                <Grid.GestureRecognizers>
+                    <input:PinchGestureRecognizer />
+                    <gestures:SwipeGestureRecognizer x:Name="PageSwipeRecognizer"
+                                                     CanHorizontallySwipe="False"
+                                                     CanVerticallySwipe="True"
+                                                     Threshold="36" />
+                </Grid.GestureRecognizers>
 
-                <ScrollViewer IsVisible="{Binding !IsFitToView}"
-                              Background="#303634"
-                              HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Auto">
-                    <Border Padding="16">
-                        <Image Source="{Binding PreviewImage}"
-                               Stretch="None"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Top" />
-                    </Border>
-                </ScrollViewer>
+                <Grid x:Name="PageLayer"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Top"
+                      IsHitTestVisible="False"
+                      RenderTransformOrigin="0%,0%">
+                    <Grid.RenderTransform>
+                        <MatrixTransform />
+                    </Grid.RenderTransform>
+                    <Image x:Name="PreviewPageImage"
+                           Source="{Binding PreviewImage}"
+                           Stretch="None" />
+                    <Canvas x:Name="SelectionOverlay" />
+                </Grid>
+
             </Grid>
 
             <Border IsVisible="{Binding IsStatusVisible}"

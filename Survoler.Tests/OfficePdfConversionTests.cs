@@ -52,6 +52,14 @@ public sealed class OfficePdfConversionTests
         Assert.IsGreaterThan(0, pdf.Pages.Count);
         StringAssert.Contains(pdf.ExtractText(), expectedText);
 
+        PdfPageInteractionMap interactionMap = PdfPageInteractionMap.Create(
+            File.ReadAllBytes(converted.Path),
+            1);
+        Assert.IsGreaterThan(0, interactionMap.TextRegions.Count);
+        StringAssert.Contains(
+            string.Concat(interactionMap.TextRegions.Select(region => region.Text)),
+            expectedText);
+
     }
 
     private sealed class TestSession : IDisposable

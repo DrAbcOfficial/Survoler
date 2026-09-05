@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using OfficeIMO.Pdf;
 
 namespace Survoler.Rendering;
 
@@ -15,7 +17,10 @@ public sealed class PdfDocumentPreview : IDocumentPreview
     private readonly ConvertedPdfDocument _document;
     private readonly IReadOnlyList<string> _navigationItems;
     private readonly Dictionary<int, Bitmap> _pageCache = new();
+    private readonly Dictionary<int, PdfPageInteractionMap> _interactionCache = new();
     private readonly LinkedList<int> _cacheOrder = new();
+    private readonly Lazy<byte[]> _pdfBytes;
+    private readonly object _interactionSync = new();
     private int _disposed;
 
     public PdfDocumentPreview(
@@ -24,6 +29,7 @@ public sealed class PdfDocumentPreview : IDocumentPreview
     {
         _renderer = renderer;
         _document = document;
+        _pdfBytes = new Lazy<byte[]>(() => File.ReadAllBytes(document.Path));
         _navigationItems = Enumerable.Range(1, renderer.PageCount)
             .Select(index => $"Page {index}")
             .ToArray();
@@ -61,6 +67,48 @@ public sealed class PdfDocumentPreview : IDocumentPreview
         return image;
     }
 
+    public async Task<PdfPageInteractionMap?> GetInteractionMapAsync(
+        int index,
+        CancellationToken cancellationToken)
+    {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+        if ((uint)index >= (uint)_navigationItems.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        lock (_interactionSync)
+        {
+            if (_interactionCache.TryGetValue(index, out PdfPageInteractionMap? cached))
+            {
+                return cached;
+            }
+        }
+
+        try
+        {
+            PdfPageInteractionMap map = await Task.Run(
+                () => PdfPageInteractionMap.Create(_pdfBytes.Value, index + 1),
+                cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            lock (_interactionSync)
+            {
+                _interactionCache[index] = map;
+            }
+            return map;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (
+            exception is not OutOfMemoryException and not StackOverflowException)
+        {
+            return null;
+        }
+    }
+
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
@@ -75,6 +123,10 @@ public sealed class PdfDocumentPreview : IDocumentPreview
 
         _pageCache.Clear();
         _cacheOrder.Clear();
+        lock (_interactionSync)
+        {
+            _interactionCache.Clear();
+        }
         _renderer.Dispose();
         _document.Dispose();
     }
@@ -91,6 +143,10 @@ public sealed class PdfDocumentPreview : IDocumentPreview
             if (_pageCache.Remove(expiredIndex, out Bitmap? expiredImage))
             {
                 expiredImage.Dispose();
+            }
+            lock (_interactionSync)
+            {
+                _interactionCache.Remove(expiredIndex);
             }
         }
     }

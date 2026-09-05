@@ -6,6 +6,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using OfficeIMO.Pdf;
 using Survoler.Documents;
 using Survoler.Rendering;
 
@@ -19,6 +20,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private int _openVersion;
     private CancellationTokenSource? _previewCancellation;
     private CancellationTokenSource? _navigationCancellation;
+    private CancellationTokenSource? _interactionCancellation;
     private CancellationTokenSource? _warningCancellation;
     private IDocumentPreview? _preview;
     private bool _settingNavigationIndex;
@@ -57,6 +59,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     public partial bool HasPreview { get; set; }
+
+    [ObservableProperty]
+    public partial PdfPageInteractionMap? PreviewInteractionMap { get; set; }
 
     [ObservableProperty]
     public partial string? PreviewWarning { get; set; }
@@ -107,6 +112,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ref _navigationCancellation,
             null);
         navigationCancellation?.Cancel();
+        CancellationTokenSource? interactionCancellation = Interlocked.Exchange(
+            ref _interactionCancellation,
+            null);
+        interactionCancellation?.Cancel();
+        interactionCancellation?.Dispose();
         CancellationTokenSource? warningCancellation = Interlocked.Exchange(
             ref _warningCancellation,
             null);
@@ -171,8 +181,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ref _navigationCancellation,
             null);
         previousNavigation?.Cancel();
+        CancellationTokenSource? previousInteraction = Interlocked.Exchange(
+            ref _interactionCancellation,
+            null);
+        previousInteraction?.Cancel();
         IDocumentPreview? previousPreview = Interlocked.Exchange(ref _preview, null);
         PreviewImage = null;
+        PreviewInteractionMap = null;
         ShowPreviewWarning(null);
         if (previousNavigation is null)
         {
@@ -181,7 +196,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         IsLoading = true;
         FileName = file.Name;
-        StatusText = "Copying document...";
+        StatusText = "\u6b63\u5728\u52a0\u8f7d\u4e2d";
         LoadProgress = 0;
         IsFitToView = true;
         FitButtonText = "100%";
@@ -204,7 +219,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
 
             Session = session;
-            StatusText = "Converting document to PDF...";
 
             IDocumentPreview preview = await _previewService.CreateAsync(
                 session,
@@ -220,6 +234,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _preview = preview;
             PreviewImage = preview.PageImage;
             SetNavigation(preview.NavigationItems, preview.SelectedIndex);
+            BeginLoadInteractionMap(preview, preview.SelectedIndex);
             LoadProgress = 1;
             StatusText = string.Empty;
         }
@@ -272,6 +287,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ref _navigationCancellation,
             cancellation);
         previousCancellation?.Cancel();
+        CancellationTokenSource? previousInteraction = Interlocked.Exchange(
+            ref _interactionCancellation,
+            null);
+        previousInteraction?.Cancel();
+        PreviewInteractionMap = null;
         IDocumentPreview expectedPreview = preview;
 
         try
@@ -287,6 +307,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             PreviewImage = image;
             SetNavigation(preview.NavigationItems, preview.SelectedIndex);
+            BeginLoadInteractionMap(preview, preview.SelectedIndex);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -330,6 +351,43 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             : string.Empty;
         CanNavigatePrevious = selectedIndex > 0;
         CanNavigateNext = selectedIndex >= 0 && selectedIndex < items.Count - 1;
+    }
+
+    private void BeginLoadInteractionMap(IDocumentPreview preview, int index)
+    {
+        var cancellation = new CancellationTokenSource();
+        CancellationTokenSource? previous = Interlocked.Exchange(
+            ref _interactionCancellation,
+            cancellation);
+        previous?.Cancel();
+        _ = LoadInteractionMapAsync(preview, index, cancellation);
+    }
+
+    private async Task LoadInteractionMapAsync(
+        IDocumentPreview preview,
+        int index,
+        CancellationTokenSource cancellation)
+    {
+        try
+        {
+            PdfPageInteractionMap? map = await preview.GetInteractionMapAsync(
+                index,
+                cancellation.Token);
+            if (ReferenceEquals(_preview, preview) &&
+                ReferenceEquals(_interactionCancellation, cancellation) &&
+                preview.SelectedIndex == index)
+            {
+                PreviewInteractionMap = map;
+            }
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            Interlocked.CompareExchange(ref _interactionCancellation, null, cancellation);
+            cancellation.Dispose();
+        }
     }
 
     private void ShowPreviewWarning(string? message)

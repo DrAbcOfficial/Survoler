@@ -20,6 +20,8 @@ public partial class App : Application
 
     public static IOfficePdfRenderingResourcesProvider? OfficePdfRenderingResourcesProvider { get; set; }
 
+    public static ITextSelectionMenu? TextSelectionMenu { get; set; }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);

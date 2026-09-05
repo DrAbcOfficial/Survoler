@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using OfficeIMO.Pdf;
 
 namespace Survoler.Rendering;
 
@@ -15,4 +16,8 @@ public interface IDocumentPreview : IDisposable
     int SelectedIndex { get; }
 
     Task<Bitmap> SelectAsync(int index, CancellationToken cancellationToken);
+
+    Task<PdfPageInteractionMap?> GetInteractionMapAsync(
+        int index,
+        CancellationToken cancellationToken);
 }
