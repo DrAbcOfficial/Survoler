@@ -1,4 +1,36 @@
-# Office Format Support
+# Document Format Support
+
+## PDF
+
+PDF files (`.pdf`, case-insensitive) open directly through Android's native PDF
+renderer, without Office conversion or rewriting PDF content. Android registers
+`application/pdf` for content-URI activation.
+
+- The input is copied into the existing size-limited session cache. An independent,
+  byte-identical temporary PDF copy belongs to the preview, so closing/replacing
+  an input session does not prematurely remove a PDF still used for rendering or
+  text extraction. Disposing the preview removes its copy, never the source file.
+- The coordinator requires `%PDF-` at byte zero; leading junk/BOM is not accepted.
+  This is only a signature check. Native opening/rendering validates structure;
+  malformed or unsupported PDFs may fail even with a valid header.
+- Existing page navigation, pinch zoom, panning, and native copy menu are reused.
+  Selection requires extractable PDF text supported by the interaction-map reader.
+  Scanned/image-only PDFs can be displayed, but there is no OCR. Text extraction
+  failure does not intentionally prevent page rendering.
+- No password entry or decryption workflow is provided. Native security failures
+  report that password-protected/restricted PDFs are unsupported. PDF JavaScript,
+  form editing, annotations, embedded attachments, and signature verification are
+  not implemented; this is a static preview, not an interactive PDF editor.
+- Limits remain 64 MiB of input, 2,000 pages, a target render width up to 2,048
+  pixels, and 5,000,000 pixels per page. These are not complete bounds on the
+  decompressed complexity or execution time of an arbitrary PDF parser.
+
+`PdfPreviewTests` checks headers, direct-conversion bypass, independent copy
+lifetimes, cleanup on open/render failure and cancellation, and real text-map
+extraction after input-session disposal. Page-renderer failures are mocked;
+native rasterization and password-protected files still require device testing.
+
+## Office Files
 
 Survoler previews DOC/DOCX, XLS/XLSX, and PPT/PPTX through OfficeIMO's PDF
 conversion pipeline. The following additional extensions use the existing

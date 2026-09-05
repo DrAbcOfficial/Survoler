@@ -43,6 +43,7 @@ $requiredManifestValues = @(
     "android.intent.action.VIEW",
     "android.intent.category.DEFAULT",
     "application/msword",
+    "application/pdf",
     "text/csv",
     "text/comma-separated-values",
     "application/csv",

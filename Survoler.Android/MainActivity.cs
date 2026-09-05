@@ -23,6 +23,7 @@ namespace Survoler.Android;
     DataMimeTypes = new[]
     {
         "application/msword",
+        "application/pdf",
         "text/csv",
         "text/comma-separated-values",
         "application/csv",

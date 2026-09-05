@@ -189,7 +189,17 @@ public sealed class DocumentOpenCoordinator : IDisposable
             header.Length,
             FileOptions.Asynchronous | FileOptions.SequentialScan);
 
-        int count = await stream.ReadAsync(header.AsMemory(), cancellationToken);
+        int count = await stream.ReadAtLeastAsync(
+            header.AsMemory(), header.Length, throwOnEndOfStream: false, cancellationToken);
+        if (kind == OfficeFileKind.Pdf)
+        {
+            if (count < 5 || !header.AsSpan(0, 5).SequenceEqual("%PDF-"u8))
+            {
+                throw new DocumentOpenException("The file does not have a valid PDF header.");
+            }
+            return;
+        }
+
         bool isCompound = count >= 8 &&
             header[0] == 0xD0 && header[1] == 0xCF && header[2] == 0x11 && header[3] == 0xE0 &&
             header[4] == 0xA1 && header[5] == 0xB1 && header[6] == 0x1A && header[7] == 0xE1;

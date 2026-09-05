@@ -42,6 +42,8 @@ public sealed class OfficeFileKindsTests
     [DataRow("report.PPTM", OfficeFileKind.Pptx, OfficeDocumentFamily.Presentation, false)]
     [DataRow("report.csv", OfficeFileKind.Csv, OfficeDocumentFamily.Spreadsheet, false)]
     [DataRow("report.CSV", OfficeFileKind.Csv, OfficeDocumentFamily.Spreadsheet, false)]
+    [DataRow("report.pdf", OfficeFileKind.Pdf, OfficeDocumentFamily.Pdf, false)]
+    [DataRow("report.PDF", OfficeFileKind.Pdf, OfficeDocumentFamily.Pdf, false)]
     public void RecognizesSupportedExtensions(
         string fileName,
         OfficeFileKind expectedKind,
@@ -57,7 +59,7 @@ public sealed class OfficeFileKindsTests
     }
 
     [TestMethod]
-    [DataRow("report.pdf")]
+    [DataRow("report.pdf.exe")]
     [DataRow("report")]
     [DataRow("report.wpsx")]
     [DataRow("report.wps.exe")]

@@ -59,19 +59,19 @@ internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
                 ParcelFileMode.ReadOnly);
             if (descriptor is null)
             {
-                throw new IOException("The converted PDF could not be opened.");
+                throw new IOException("The PDF could not be opened.");
             }
 
             renderer = new PdfRenderer(descriptor);
 
             if (renderer.PageCount == 0)
             {
-                throw new DocumentOpenException("The converted PDF has no pages.");
+                throw new DocumentOpenException("The PDF has no pages.");
             }
 
             if (renderer.PageCount > PreviewLimits.MaxPdfPages)
             {
-                throw new DocumentOpenException("The converted PDF has too many pages for quick preview.");
+                throw new DocumentOpenException("The PDF has too many pages for quick preview.");
             }
 
             int screenWidth = global::Android.App.Application.Context.Resources?
@@ -85,10 +85,14 @@ internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
             descriptor = null;
             return result;
         }
-        catch
+        catch (Exception exception)
         {
             renderer?.Dispose();
             descriptor?.Dispose();
+            if (exception is Java.Lang.SecurityException)
+            {
+                throw new DocumentOpenException("Password-protected or restricted PDFs are not supported.");
+            }
             throw;
         }
     }
@@ -185,7 +189,7 @@ internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
     {
         if (pageWidth <= 0 || pageHeight <= 0)
         {
-            throw new InvalidDataException("The converted PDF contains an invalid page size.");
+            throw new InvalidDataException("The PDF contains an invalid page size.");
         }
 
         double scale = (double)_targetWidth / pageWidth;

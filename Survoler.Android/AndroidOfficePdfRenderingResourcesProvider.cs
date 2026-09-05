@@ -92,7 +92,7 @@ public sealed class AndroidOfficePdfRenderingResourcesProvider : IOfficePdfRende
             "survoler-android-system",
             fonts,
             textShapingProvider: OfficeManagedTextShapingProvider.Instance);
-        return new OfficePdfRenderingResources(profile, substitutions);
+        return new OfficePdfRenderingResources(profile, substitutions, SansFamily);
     }
 
     private static bool TryAddFamily(

@@ -40,7 +40,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     [ObservableProperty]
-    public partial string StatusText { get; set; } = "Open an Office file to preview it.";
+    public partial string StatusText { get; set; } = "Open an Office, CSV or PDF file to preview it.";
 
     [ObservableProperty]
     public partial string FileName { get; set; } = string.Empty;

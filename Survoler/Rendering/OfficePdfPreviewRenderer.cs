@@ -24,7 +24,9 @@ public sealed class OfficePdfPreviewRenderer : IDocumentPreviewRenderer
         DocumentSession session,
         CancellationToken cancellationToken)
     {
-        ConvertedPdfDocument converted = await _converter.ConvertAsync(session, cancellationToken);
+        ConvertedPdfDocument converted = session.Kind == OfficeFileKind.Pdf
+            ? await ConvertedPdfDocument.CopyFromAsync(session.LocalPath, cancellationToken)
+            : await _converter.ConvertAsync(session, cancellationToken);
         IPdfPageRenderer? renderer = null;
         PdfDocumentPreview? preview = null;
 
