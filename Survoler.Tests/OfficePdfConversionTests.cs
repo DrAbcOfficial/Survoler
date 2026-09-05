@@ -13,22 +13,30 @@ public sealed class OfficePdfConversionTests
     [DataRow("sample.xlsx", OfficeFileKind.Xlsx, "Documents")]
     [DataRow("sample.ppt", OfficeFileKind.Ppt, "Survoler Presentation")]
     [DataRow("sample.pptx", OfficeFileKind.Pptx, "Survoler Presentation")]
+    [DataRow("sample.xls", OfficeFileKind.Xls, "Documents", ".et")]
+    [DataRow("sample.xls", OfficeFileKind.Xls, "Documents", ".ett")]
+    [DataRow("sample.ppt", OfficeFileKind.Ppt, "Survoler Presentation", ".dps")]
+    [DataRow("sample.ppt", OfficeFileKind.Ppt, "Survoler Presentation", ".dpt")]
     public async Task ConvertsOfficeSampleToReadablePdf(
         string fixtureName,
         OfficeFileKind kind,
-        string expectedText)
+        string expectedText,
+        string? aliasExtension = null)
     {
-        using TestSession test = TestSession.Create(fixtureName, kind);
+        using TestSession test = TestSession.Create(fixtureName, kind, aliasExtension);
         await AssertConvertedPdfAsync(test.Session, expectedText);
     }
 
     [TestMethod]
     [DataRow(".doc", OfficeFileKind.Doc)]
     [DataRow(".docx", OfficeFileKind.Docx)]
-    public async Task ConvertsWordToReadablePdf(string extension, OfficeFileKind kind)
+    [DataRow(".doc", OfficeFileKind.Doc, ".wps")]
+    [DataRow(".doc", OfficeFileKind.Doc, ".wpt")]
+    public async Task ConvertsWordToReadablePdf(
+        string extension, OfficeFileKind kind, string? aliasExtension = null)
     {
         const string expectedText = "Survoler quick Office preview";
-        using TestSession test = TestSession.CreateWord(extension, kind, expectedText);
+        using TestSession test = TestSession.CreateWord(extension, kind, expectedText, aliasExtension);
         await AssertConvertedPdfAsync(test.Session, expectedText);
     }
 
@@ -71,12 +79,13 @@ public sealed class OfficePdfConversionTests
 
         public DocumentSession Session { get; }
 
-        public static TestSession Create(string fixtureName, OfficeFileKind kind)
+        public static TestSession Create(
+            string fixtureName, OfficeFileKind kind, string? aliasExtension = null)
         {
             string source = Path.Combine(AppContext.BaseDirectory, "TestData", fixtureName);
             string destination = Path.Combine(
                 Path.GetTempPath(),
-                $"survoler-test-{Guid.NewGuid():N}{Path.GetExtension(fixtureName)}");
+                $"survoler-test-{Guid.NewGuid():N}{aliasExtension ?? Path.GetExtension(fixtureName)}");
             File.Copy(source, destination);
             return new TestSession(new DocumentSession(Guid.NewGuid(), fixtureName, destination, kind));
         }
@@ -84,7 +93,8 @@ public sealed class OfficePdfConversionTests
         public static TestSession CreateWord(
             string extension,
             OfficeFileKind kind,
-            string text)
+            string text,
+            string? aliasExtension = null)
         {
             string destination = Path.Combine(
                 Path.GetTempPath(),
@@ -93,6 +103,13 @@ public sealed class OfficePdfConversionTests
             {
                 document.AddParagraph(text);
                 document.Save(destination);
+            }
+
+            if (aliasExtension is not null)
+            {
+                string aliasPath = Path.ChangeExtension(destination, aliasExtension);
+                File.Move(destination, aliasPath);
+                destination = aliasPath;
             }
 
             return new TestSession(new DocumentSession(

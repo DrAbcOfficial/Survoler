@@ -27,7 +27,20 @@ namespace Survoler.Android;
         "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.ms-powerpoint",
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/wps-office.wps",
+        "application/wps-office.wpt",
+        "application/wps-office.et",
+        "application/wps-office.ett",
+        "application/wps-office.dps",
+        "application/wps-office.dpt",
+        "application/vnd.ms-works",
+        "application/x-wps",
+        "application/x-wpt",
+        "application/x-et",
+        "application/x-ett",
+        "application/x-dps",
+        "application/x-dpt"
     })]
 public class MainActivity : AvaloniaMainActivity, ITextSelectionMenu
 {

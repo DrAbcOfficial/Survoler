@@ -1,0 +1,99 @@
+using System.Reflection;
+using Avalonia.Platform.Storage;
+using Survoler.Documents;
+
+namespace Survoler.Tests;
+
+[TestClass]
+public sealed class DocumentOpenCoordinatorTests
+{
+    [TestMethod]
+    [DataRow("report.wps", "sample.doc", OfficeFileKind.Doc)]
+    [DataRow("report.wpt", "sample.doc", OfficeFileKind.Doc)]
+    [DataRow("report.et", "sample.xls", OfficeFileKind.Xls)]
+    [DataRow("report.ett", "sample.xls", OfficeFileKind.Xls)]
+    [DataRow("report.dps", "sample.ppt", OfficeFileKind.Ppt)]
+    [DataRow("report.dpt", "sample.ppt", OfficeFileKind.Ppt)]
+    public async Task OpensOleFixtureUnderAliasPreservingSourceNameAndKind(
+        string sourceName,
+        string fixtureName,
+        OfficeFileKind expectedKind)
+    {
+        // Renamed Office fixtures exercise alias handling, not native WPS format support.
+        byte[] content = await File.ReadAllBytesAsync(
+            Path.Combine(AppContext.BaseDirectory, "TestData", fixtureName));
+        using IStorageFile file = FakeStorageFile.Create(sourceName, content);
+        using var coordinator = new DocumentOpenCoordinator();
+
+        DocumentSession? session = await coordinator.OpenAsync(file);
+
+        Assert.IsNotNull(session);
+        Assert.AreEqual(sourceName, session.SourceName);
+        Assert.AreEqual(expectedKind, session.Kind);
+        CollectionAssert.AreEqual(content, await File.ReadAllBytesAsync(session.LocalPath));
+    }
+
+    [TestMethod]
+    [DataRow("report.wps")]
+    [DataRow("report.wpt")]
+    [DataRow("report.et")]
+    [DataRow("report.ett")]
+    [DataRow("report.dps")]
+    [DataRow("report.dpt")]
+    public async Task RejectsContentWithoutCompleteOleSignatureUnderAlias(string sourceName)
+    {
+        var invalidContents = new Dictionary<string, byte[]>
+        {
+            ["non-OLE binary"] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07],
+            ["plain text"] = "This is not an OLE document."u8.ToArray(),
+            ["ZIP Office fixture"] = await File.ReadAllBytesAsync(
+                Path.Combine(AppContext.BaseDirectory, "TestData", "sample.docx")),
+            ["empty ZIP signature"] = [0x50, 0x4B, 0x05, 0x06, 0, 0, 0, 0],
+            ["spanned ZIP signature"] = [0x50, 0x4B, 0x07, 0x08, 0, 0, 0, 0]
+        };
+        byte[] oleSignature = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+        for (int length = 0; length < oleSignature.Length; length++)
+        {
+            invalidContents.Add($"OLE prefix of {length} bytes", oleSignature[..length]);
+        }
+
+        using var coordinator = new DocumentOpenCoordinator();
+        foreach ((string description, byte[] content) in invalidContents)
+        {
+            using IStorageFile file = FakeStorageFile.Create(sourceName, content);
+            DocumentOpenException exception = await Assert.ThrowsExactlyAsync<DocumentOpenException>(
+                () => coordinator.OpenAsync(file), $"{sourceName}: {description}");
+
+            Assert.AreEqual(
+                "The file content does not match its extension.",
+                exception.Message,
+                $"{sourceName}: {description} must fail content validation, not extension recognition.");
+        }
+    }
+
+    // Avalonia 12 blocks direct C# implementations of its storage interfaces.
+    public class FakeStorageFile : DispatchProxy
+    {
+        private string _name = string.Empty;
+        private byte[] _content = [];
+
+        public static IStorageFile Create(string name, byte[] content)
+        {
+            IStorageFile file = Create<IStorageFile, FakeStorageFile>();
+            var fake = (FakeStorageFile)file;
+            fake._name = name;
+            fake._content = content;
+            return file;
+        }
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) =>
+            targetMethod?.Name switch
+            {
+                "get_Name" => _name,
+                nameof(IStorageFile.OpenReadAsync) =>
+                    Task.FromResult<Stream>(new MemoryStream(_content, writable: false)),
+                nameof(IDisposable.Dispose) => null,
+                _ => throw new NotSupportedException(targetMethod?.Name)
+            };
+    }
+}

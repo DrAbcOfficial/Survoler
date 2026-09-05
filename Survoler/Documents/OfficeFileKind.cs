@@ -27,17 +27,18 @@ public static class OfficeFileKinds
         string extension = Path.GetExtension(fileName).ToLowerInvariant();
         kind = extension switch
         {
-            ".doc" => OfficeFileKind.Doc,
+            ".doc" or ".wps" or ".wpt" => OfficeFileKind.Doc,
             ".docx" => OfficeFileKind.Docx,
-            ".xls" => OfficeFileKind.Xls,
+            ".xls" or ".et" or ".ett" => OfficeFileKind.Xls,
             ".xlsx" => OfficeFileKind.Xlsx,
-            ".ppt" => OfficeFileKind.Ppt,
+            ".ppt" or ".dps" or ".dpt" => OfficeFileKind.Ppt,
             ".pptx" => OfficeFileKind.Pptx,
             _ => default
         };
 
         return extension is
-            ".doc" or ".docx" or ".xls" or ".xlsx" or ".ppt" or ".pptx";
+            ".doc" or ".docx" or ".xls" or ".xlsx" or ".ppt" or ".pptx" or
+            ".wps" or ".wpt" or ".et" or ".ett" or ".dps" or ".dpt";
     }
 
     public static OfficeDocumentFamily GetFamily(this OfficeFileKind kind) => kind switch
