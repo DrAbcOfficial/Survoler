@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using OfficeIMO.Pdf;
 using Survoler.Documents;
 using Survoler.Rendering;
+using Survoler.Resources;
 
 namespace Survoler.ViewModels;
 
@@ -40,7 +41,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     [ObservableProperty]
-    public partial string StatusText { get; set; } = "Open an Office, CSV, PDF or OFD file to preview it.";
+    public partial string StatusText { get; set; } = Strings.Get("OpenPrompt");
 
     [ObservableProperty]
     public partial string FileName { get; set; } = string.Empty;
@@ -100,7 +101,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial bool IsFitToView { get; set; } = true;
 
     [ObservableProperty]
-    public partial string FitButtonText { get; set; } = "100%";
+    public partial string FitButtonText { get; set; } = Strings.ActualSize;
 
     public void Dispose()
     {
@@ -156,7 +157,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void ToggleFit()
     {
         IsFitToView = !IsFitToView;
-        FitButtonText = IsFitToView ? "100%" : "FIT";
+        FitButtonText = IsFitToView ? Strings.ActualSize : Strings.Fit;
     }
 
     private async void OnFileActivated(object? sender, IStorageFile file)
@@ -196,10 +197,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         IsLoading = true;
         FileName = file.Name;
-        StatusText = "\u6b63\u5728\u52a0\u8f7d\u4e2d";
+        StatusText = Strings.Get("Loading");
         LoadProgress = 0;
         IsFitToView = true;
-        FitButtonText = "100%";
+        FitButtonText = Strings.ActualSize;
         SetNavigation(Array.Empty<string>(), -1);
 
         try
@@ -260,7 +261,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
 
             Session = null;
-            StatusText = "The document could not be opened.";
+            StatusText = Strings.Get("OpenFailed");
         }
         finally
         {
@@ -318,7 +319,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             if (ReferenceEquals(_preview, expectedPreview))
             {
-                ShowPreviewWarning("This PDF page could not be rendered.");
+                ShowPreviewWarning(Strings.Get("PageRenderFailed"));
             }
         }
         finally
@@ -349,7 +350,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _settingNavigationIndex = false;
 
         NavigationPosition = selectedIndex >= 0 && items.Count > 0
-            ? $"{selectedIndex + 1} / {items.Count}"
+            ? Strings.Format("NavigationPosition", selectedIndex + 1, items.Count)
             : string.Empty;
         CanNavigatePrevious = selectedIndex > 0;
         CanNavigateNext = selectedIndex >= 0 && selectedIndex < items.Count - 1;

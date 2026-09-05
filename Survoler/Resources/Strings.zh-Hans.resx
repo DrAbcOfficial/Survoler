@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Previous" xml:space="preserve"><value>上一页</value></data>
+  <data name="Next" xml:space="preserve"><value>下一页</value></data>
+  <data name="Fit" xml:space="preserve"><value>适应</value></data>
+  <data name="ActualSize" xml:space="preserve"><value>100%</value></data>
+  <data name="OpenPrompt" xml:space="preserve"><value>打开 Office、CSV、PDF 或 OFD 文件以预览。</value></data>
+  <data name="Loading" xml:space="preserve"><value>正在加载中</value></data>
+  <data name="OpenFailed" xml:space="preserve"><value>无法打开此文档。</value></data>
+  <data name="PageRenderFailed" xml:space="preserve"><value>无法渲染此 PDF 页面。</value></data>
+  <data name="Page" xml:space="preserve"><value>第 {0} 页</value></data>
+  <data name="NavigationPosition" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="UnsupportedFileType" xml:space="preserve"><value>不支持此文件类型。</value></data>
+  <data name="FileTooLarge" xml:space="preserve"><value>文件过大，无法快速预览。</value></data>
+  <data name="InvalidPdfHeader" xml:space="preserve"><value>文件不包含有效的 PDF 文件头。</value></data>
+  <data name="ContentMismatch" xml:space="preserve"><value>文件内容与扩展名不匹配。</value></data>
+  <data name="MissingPdfFont" xml:space="preserve"><value>此设备缺少可嵌入 PDF 的字体，无法显示部分文档字符。</value></data>
+  <data name="ConversionFailed" xml:space="preserve"><value>无法将此文档转换为 PDF。</value></data>
+  <data name="CsvEncoding" xml:space="preserve"><value>CSV 必须使用 UTF-8，或带 BOM 的 UTF-16 编码。</value></data>
+  <data name="CsvLimits" xml:space="preserve"><value>CSV 预览最多支持 10,000 行、256 列和 100,000 个单元格。</value></data>
+  <data name="CsvFieldLimit" xml:space="preserve"><value>CSV 中某个字段超过 32,767 个字符。</value></data>
+  <data name="CsvEmpty" xml:space="preserve"><value>CSV 文件中没有可预览的记录。</value></data>
+  <data name="CsvMalformed" xml:space="preserve"><value>CSV 文件中的引号字段格式错误。</value></data>
+  <data name="CsvControlCharacters" xml:space="preserve"><value>CSV 文件包含不支持的控制字符。</value></data>
+  <data name="PdfOpenFailed" xml:space="preserve"><value>无法打开此 PDF。</value></data>
+  <data name="PdfNoPages" xml:space="preserve"><value>此 PDF 没有页面。</value></data>
+  <data name="PdfPageLimit" xml:space="preserve"><value>此 PDF 页数过多，无法快速预览。</value></data>
+  <data name="PdfRestricted" xml:space="preserve"><value>暂不支持需要密码或受限制的 PDF。</value></data>
+  <data name="PdfBitmapAllocationFailed" xml:space="preserve"><value>无法为 PDF 页面分配图像内存。</value></data>
+  <data name="PdfInvalidPageSize" xml:space="preserve"><value>此 PDF 包含无效的页面尺寸。</value></data>
+</root>

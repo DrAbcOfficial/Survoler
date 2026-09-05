@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
+using Survoler.Resources;
 
 namespace Survoler.Documents;
 
@@ -22,7 +23,7 @@ public sealed class DocumentOpenCoordinator : IDisposable
     {
         if (!OfficeFileKinds.TryFromFileName(file.Name, out OfficeFileKind kind))
         {
-            throw new DocumentOpenException("This file type is not supported.");
+            throw new DocumentOpenException(Strings.Get("UnsupportedFileType"));
         }
 
         var requestCancellation = new CancellationTokenSource();
@@ -50,7 +51,7 @@ public sealed class DocumentOpenCoordinator : IDisposable
             long? totalBytes = GetLength(source);
             if (totalBytes > PreviewLimits.MaxInputBytes)
             {
-                throw new DocumentOpenException("This file is too large for quick preview.");
+                throw new DocumentOpenException(Strings.Get("FileTooLarge"));
             }
 
             string cacheDirectory = Path.Combine(Path.GetTempPath(), "survoler");
@@ -156,7 +157,7 @@ public sealed class DocumentOpenCoordinator : IDisposable
                 bytesRead += count;
                 if (bytesRead > PreviewLimits.MaxInputBytes)
                 {
-                    throw new DocumentOpenException("This file is too large for quick preview.");
+                    throw new DocumentOpenException(Strings.Get("FileTooLarge"));
                 }
 
                 await destination.WriteAsync(buffer.AsMemory(0, count), cancellationToken);
@@ -195,7 +196,7 @@ public sealed class DocumentOpenCoordinator : IDisposable
         {
             if (count < 5 || !header.AsSpan(0, 5).SequenceEqual("%PDF-"u8))
             {
-                throw new DocumentOpenException("The file does not have a valid PDF header.");
+                throw new DocumentOpenException(Strings.Get("InvalidPdfHeader"));
             }
             return;
         }
@@ -210,7 +211,7 @@ public sealed class DocumentOpenCoordinator : IDisposable
 
         if ((kind.IsLegacy() && !isCompound) || (!kind.IsLegacy() && !isZip))
         {
-            throw new DocumentOpenException("The file content does not match its extension.");
+            throw new DocumentOpenException(Strings.Get("ContentMismatch"));
         }
     }
 

@@ -10,6 +10,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Survoler.Documents;
 using Survoler.Rendering;
+using Survoler.Resources;
 using AndroidBitmap = Android.Graphics.Bitmap;
 
 namespace Survoler.Android;
@@ -59,19 +60,19 @@ internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
                 ParcelFileMode.ReadOnly);
             if (descriptor is null)
             {
-                throw new IOException("The PDF could not be opened.");
+                throw new IOException(Strings.Get("PdfOpenFailed"));
             }
 
             renderer = new PdfRenderer(descriptor);
 
             if (renderer.PageCount == 0)
             {
-                throw new DocumentOpenException("The PDF has no pages.");
+                throw new DocumentOpenException(Strings.Get("PdfNoPages"));
             }
 
             if (renderer.PageCount > PreviewLimits.MaxPdfPages)
             {
-                throw new DocumentOpenException("The PDF has too many pages for quick preview.");
+                throw new DocumentOpenException(Strings.Get("PdfPageLimit"));
             }
 
             int screenWidth = global::Android.App.Application.Context.Resources?
@@ -91,7 +92,7 @@ internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
             descriptor?.Dispose();
             if (exception is Java.Lang.SecurityException)
             {
-                throw new DocumentOpenException("Password-protected or restricted PDFs are not supported.");
+                throw new DocumentOpenException(Strings.Get("PdfRestricted"));
             }
             throw;
         }
@@ -157,7 +158,7 @@ internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
             width,
             height,
             AndroidBitmap.Config.Argb8888!)
-            ?? throw new OutOfMemoryException("The PDF page bitmap could not be allocated.");
+            ?? throw new OutOfMemoryException(Strings.Get("PdfBitmapAllocationFailed"));
         nativeBitmap.EraseColor(global::Android.Graphics.Color.White);
         page.Render(nativeBitmap, null, null, PdfRenderMode.ForDisplay);
         cancellationToken.ThrowIfCancellationRequested();
@@ -189,7 +190,7 @@ internal sealed class AndroidPdfPageRenderer : IPdfPageRenderer
     {
         if (pageWidth <= 0 || pageHeight <= 0)
         {
-            throw new InvalidDataException("The PDF contains an invalid page size.");
+            throw new InvalidDataException(Strings.Get("PdfInvalidPageSize"));
         }
 
         double scale = (double)_targetWidth / pageWidth;

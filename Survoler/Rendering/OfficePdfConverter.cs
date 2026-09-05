@@ -14,6 +14,7 @@ using OfficeIMO.PowerPoint.Pdf;
 using OfficeIMO.Word;
 using OfficeIMO.Word.Pdf;
 using Survoler.Documents;
+using Survoler.Resources;
 
 namespace Survoler.Rendering;
 
@@ -54,10 +55,10 @@ public sealed class OfficePdfConverter
                 if (result.TextEncodingDiagnostics.Count > 0)
                 {
                     throw new DocumentOpenException(
-                        "This device has no PDF-embeddable font for some document characters.");
+                        Strings.Get("MissingPdfFont"));
                 }
 
-                throw new DocumentOpenException("The document could not be converted to PDF.");
+                throw new DocumentOpenException(Strings.Get("ConversionFailed"));
             }
 
             return new ConvertedPdfDocument(pdfPath);

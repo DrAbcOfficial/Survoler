@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Previous" xml:space="preserve"><value>PREV</value></data>
+  <data name="Next" xml:space="preserve"><value>NEXT</value></data>
+  <data name="Fit" xml:space="preserve"><value>FIT</value></data>
+  <data name="ActualSize" xml:space="preserve"><value>100%</value></data>
+  <data name="OpenPrompt" xml:space="preserve"><value>Open an Office, CSV, PDF or OFD file to preview it.</value></data>
+  <data name="Loading" xml:space="preserve"><value>Loading...</value></data>
+  <data name="OpenFailed" xml:space="preserve"><value>The document could not be opened.</value></data>
+  <data name="PageRenderFailed" xml:space="preserve"><value>This PDF page could not be rendered.</value></data>
+  <data name="Page" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="NavigationPosition" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="UnsupportedFileType" xml:space="preserve"><value>This file type is not supported.</value></data>
+  <data name="FileTooLarge" xml:space="preserve"><value>This file is too large for quick preview.</value></data>
+  <data name="InvalidPdfHeader" xml:space="preserve"><value>The file does not have a valid PDF header.</value></data>
+  <data name="ContentMismatch" xml:space="preserve"><value>The file content does not match its extension.</value></data>
+  <data name="MissingPdfFont" xml:space="preserve"><value>This device has no PDF-embeddable font for some document characters.</value></data>
+  <data name="ConversionFailed" xml:space="preserve"><value>The document could not be converted to PDF.</value></data>
+  <data name="CsvEncoding" xml:space="preserve"><value>CSV must use UTF-8 or UTF-16 with a BOM.</value></data>
+  <data name="CsvLimits" xml:space="preserve"><value>CSV preview is limited to 10,000 rows, 256 columns and 100,000 cells.</value></data>
+  <data name="CsvFieldLimit" xml:space="preserve"><value>A CSV field exceeds 32,767 characters.</value></data>
+  <data name="CsvEmpty" xml:space="preserve"><value>The CSV file contains no records to preview.</value></data>
+  <data name="CsvMalformed" xml:space="preserve"><value>The CSV file contains malformed quoted fields.</value></data>
+  <data name="CsvControlCharacters" xml:space="preserve"><value>The CSV file contains unsupported control characters.</value></data>
+  <data name="PdfOpenFailed" xml:space="preserve"><value>The PDF could not be opened.</value></data>
+  <data name="PdfNoPages" xml:space="preserve"><value>The PDF has no pages.</value></data>
+  <data name="PdfPageLimit" xml:space="preserve"><value>The PDF has too many pages for quick preview.</value></data>
+  <data name="PdfRestricted" xml:space="preserve"><value>Password-protected or restricted PDFs are not supported.</value></data>
+  <data name="PdfBitmapAllocationFailed" xml:space="preserve"><value>The PDF page bitmap could not be allocated.</value></data>
+  <data name="PdfInvalidPageSize" xml:space="preserve"><value>The PDF contains an invalid page size.</value></data>
+</root>

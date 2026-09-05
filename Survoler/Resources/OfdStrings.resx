@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="InvalidPrefix" xml:space="preserve"><value>Invalid OFD: {0}</value></data>
+  <data name="UnsupportedPrefix" xml:space="preserve"><value>Unsupported OFD feature: {0}.</value></data>
+  <data name="InvalidOfdXml" xml:space="preserve"><value>Invalid OFD XML: DTDs and malformed XML are not supported.</value></data>
+  <data name="InvalidOfdPackage" xml:space="preserve"><value>Invalid OFD: The package is invalid or uses unsupported ZIP features.</value></data>
+  <data name="InputTooLarge" xml:space="preserve"><value>Input exceeds 64 MiB.</value></data>
+  <data name="TooManyZipEntries" xml:space="preserve"><value>Too many ZIP entries.</value></data>
+  <data name="UnsafeZipPath" xml:space="preserve"><value>Unsafe ZIP entry path.</value></data>
+  <data name="EmptyOrDuplicateZipPath" xml:space="preserve"><value>Empty or duplicate ZIP entry path.</value></data>
+  <data name="ZipExpansionLimit" xml:space="preserve"><value>ZIP expansion limits exceeded.</value></data>
+  <data name="MissingOfdEntry" xml:space="preserve"><value>The package has no OFD.xml entry.</value></data>
+  <data name="MissingPackageEntry" xml:space="preserve"><value>Missing package entry: {0}</value></data>
+  <data name="PackageReadBudget" xml:space="preserve"><value>Package read budget exceeded.</value></data>
+  <data name="TruncatedPackageEntry" xml:space="preserve"><value>Truncated package entry.</value></data>
+  <data name="PackageEntryLength" xml:space="preserve"><value>Package entry exceeds its declared length.</value></data>
+  <data name="XmlSizeBudget" xml:space="preserve"><value>XML size budget exceeded.</value></data>
+  <data name="XmlComplexityLimit" xml:space="preserve"><value>XML complexity limit exceeded.</value></data>
+  <data name="XmlNodeBudget" xml:space="preserve"><value>XML node budget exceeded.</value></data>
+  <data name="InvalidResourceReference" xml:space="preserve"><value>Invalid package resource reference.</value></data>
+  <data name="ResourceReferenceEscape" xml:space="preserve"><value>Resource reference escapes the package.</value></data>
+  <data name="ResourceReferenceNotFile" xml:space="preserve"><value>Resource reference does not name a file.</value></data>
+  <data name="ConversionInputTooLarge" xml:space="preserve"><value>The input exceeds 64 MiB.</value></data>
+  <data name="OutputTooLarge" xml:space="preserve"><value>The generated PDF exceeds 64 MiB.</value></data>
+  <data name="PdfWriteFailed" xml:space="preserve"><value>The generated PDF could not be written.</value></data>
+  <data name="ObjectBudget" xml:space="preserve"><value>The object/template budget was exceeded.</value></data>
+  <data name="EmptyXml" xml:space="preserve"><value>An XML document is empty.</value></data>
+  <data name="ExpectedRoot" xml:space="preserve"><value>Expected OFD {0} in {1}.</value></data>
+  <data name="DocumentType" xml:space="preserve"><value>Document type</value></data>
+  <data name="DocBodyCount" xml:space="preserve"><value>Exactly one DocBody is supported.</value></data>
+  <data name="SkippedSignaturesAndAnnotations" xml:space="preserve"><value>Partial OFD preview: seals, signatures and annotations were skipped. This preview does not verify digital signatures.</value></data>
+  <data name="SkippedSignatures" xml:space="preserve"><value>Partial OFD preview: seals and signatures were skipped. This preview does not verify digital signatures.</value></data>
+  <data name="SkippedAnnotations" xml:space="preserve"><value>Partial OFD preview: annotations were skipped. This preview does not verify digital signatures.</value></data>
+  <data name="InvalidTemplateZOrder" xml:space="preserve"><value>Invalid template ZOrder.</value></data>
+  <data name="DuplicateTemplateId" xml:space="preserve"><value>Duplicate template ID.</value></data>
+  <data name="PageCount" xml:space="preserve"><value>The page count must be between 1 and 2000.</value></data>
+  <data name="PdfWriterUnavailable" xml:space="preserve"><value>The PDF writer is unavailable.</value></data>
+  <data name="DuplicatePageId" xml:space="preserve"><value>Duplicate page ID.</value></data>
+  <data name="MissingPhysicalBox" xml:space="preserve"><value>No physical page box is defined.</value></data>
+  <data name="NoGraphicObjects" xml:space="preserve"><value>The document has no supported graphic objects.</value></data>
+  <data name="NonImageMultimedia" xml:space="preserve"><value>Non-image multimedia</value></data>
+  <data name="ImageFormat" xml:space="preserve"><value>Image format {0}</value></data>
+  <data name="ColorSpacesSupported" xml:space="preserve"><value>Only 8-bit RGB/GRAY color spaces are supported</value></data>
+  <data name="DuplicateResourceId" xml:space="preserve"><value>Duplicate resource ID {0}.</value></data>
+  <data name="TemplateDepth" xml:space="preserve"><value>Template nesting exceeds 64 levels.</value></data>
+  <data name="UnknownTemplate" xml:space="preserve"><value>Unknown template reference.</value></data>
+  <data name="InvalidLayerType" xml:space="preserve"><value>Invalid layer type.</value></data>
+  <data name="CyclicTemplate" xml:space="preserve"><value>Cyclic template reference.</value></data>
+  <data name="OutlinedText" xml:space="preserve"><value>Outlined or non-filled text</value></data>
+  <data name="MissingTextCode" xml:space="preserve"><value>TextObject has no TextCode.</value></data>
+  <data name="TextBudget" xml:space="preserve"><value>The text budget exceeds one million characters.</value></data>
+  <data name="EmptyTextCode" xml:space="preserve"><value>Empty TextCode.</value></data>
+  <data name="MissingGlyphs" xml:space="preserve"><value>No glyph is available for some OFD text characters.</value></data>
+  <data name="FirstTextCodeX" xml:space="preserve"><value>The first TextCode must define X.</value></data>
+  <data name="FirstTextCodeY" xml:space="preserve"><value>The first TextCode must define Y.</value></data>
+  <data name="EmptyTextDelta" xml:space="preserve"><value>Empty text delta.</value></data>
+  <data name="InvalidDeltaRepeat" xml:space="preserve"><value>Invalid delta repetition.</value></data>
+  <data name="TextDeltaExpansion" xml:space="preserve"><value>Text delta expansion exceeds its rune count.</value></data>
+  <data name="ShortTextDeltas" xml:space="preserve"><value>Short text delta lists</value></data>
+  <data name="TrueTypeRequired" xml:space="preserve"><value>Embedded fonts must contain TrueType outlines</value></data>
+  <data name="EmbeddedFontMissingGlyphs" xml:space="preserve"><value>The embedded OFD font lacks some text glyphs.</value></data>
+  <data name="FallbackFontReadFailed" xml:space="preserve"><value>The desktop fallback font cannot be read.</value></data>
+  <data name="FallbackFontLoadFailed" xml:space="preserve"><value>The desktop fallback font cannot be loaded.</value></data>
+  <data name="NoFontCoverage" xml:space="preserve"><value>No available OFD font covers all characters in the text object.</value></data>
+  <data name="FontLoadFailed" xml:space="preserve"><value>An OFD font could not be loaded.</value></data>
+  <data name="FontBudget" xml:space="preserve"><value>The loaded font budget exceeds 64 MiB or a font is empty.</value></data>
+  <data name="PathFillRule" xml:space="preserve"><value>Path fill rule</value></data>
+  <data name="SubpathStart" xml:space="preserve"><value>A subpath must start with S or M.</value></data>
+  <data name="MoveInOpenSubpath" xml:space="preserve"><value>M within an open subpath</value></data>
+  <data name="InvalidArc" xml:space="preserve"><value>Invalid elliptical arc.</value></data>
+  <data name="PathCommand" xml:space="preserve"><value>Path command {0}</value></data>
+  <data name="EmptyPath" xml:space="preserve"><value>Empty path.</value></data>
+  <data name="LineCap" xml:space="preserve"><value>Line cap</value></data>
+  <data name="LineJoin" xml:space="preserve"><value>Line join</value></data>
+  <data name="IncompletePathCommand" xml:space="preserve"><value>Incomplete path command.</value></data>
+  <data name="ImageDrawBudget" xml:space="preserve"><value>The image draw budget exceeds 10,000 operations.</value></data>
+  <data name="ImageTypesSupported" xml:space="preserve"><value>Only PNG and JPEG images are supported</value></data>
+  <data name="TruncatedPngChunk" xml:space="preserve"><value>Truncated PNG chunk.</value></data>
+  <data name="InvalidPngChunkLength" xml:space="preserve"><value>Invalid PNG chunk length.</value></data>
+  <data name="AnimatedPng" xml:space="preserve"><value>Animated PNG images</value></data>
+  <data name="InvalidImage" xml:space="preserve"><value>Invalid image.</value></data>
+  <data name="ImagePixelLimit" xml:space="preserve"><value>An image exceeds the five-million-pixel limit.</value></data>
+  <data name="DecodedImageBudget" xml:space="preserve"><value>The decoded image budget exceeds 16 million pixels.</value></data>
+  <data name="AnimatedImages" xml:space="preserve"><value>Animated images</value></data>
+  <data name="ExifOrientation" xml:space="preserve"><value>Images with EXIF orientation</value></data>
+  <data name="ImageDecodeFailed" xml:space="preserve"><value>Image decoding failed.</value></data>
+  <data name="ImageRetainFailed" xml:space="preserve"><value>An image could not be retained.</value></data>
+  <data name="AssetReadBudget" xml:space="preserve"><value>The cumulative asset-read budget exceeds 256 MiB.</value></data>
+  <data name="ColorComponentCount" xml:space="preserve"><value>Invalid color component count.</value></data>
+  <data name="UnknownResource" xml:space="preserve"><value>Unknown {0} resource {1}.</value></data>
+  <data name="ForeignXmlNamespace" xml:space="preserve"><value>Foreign XML namespace</value></data>
+  <data name="UnexpectedText" xml:space="preserve"><value>Unexpected text in {0}.</value></data>
+  <data name="DuplicateElement" xml:space="preserve"><value>Duplicate {0}.</value></data>
+  <data name="MissingElement" xml:space="preserve"><value>Missing {0}.</value></data>
+  <data name="EmptyElement" xml:space="preserve"><value>Empty {0}.</value></data>
+  <data name="MissingAttribute" xml:space="preserve"><value>Missing {0}@{1}.</value></data>
+  <data name="InvalidId" xml:space="preserve"><value>Invalid OFD ID.</value></data>
+  <data name="InvalidNumber" xml:space="preserve"><value>Invalid number.</value></data>
+  <data name="CoordinateRange" xml:space="preserve"><value>A coordinate is non-finite or exceeds the supported range.</value></data>
+  <data name="PositiveDimension" xml:space="preserve"><value>A dimension must be positive.</value></data>
+  <data name="CoordinateCount" xml:space="preserve"><value>Invalid coordinate count.</value></data>
+  <data name="ColorComponentRange" xml:space="preserve"><value>A color/alpha component must be an integer between 0 and 255.</value></data>
+  <data name="InvalidBoolean" xml:space="preserve"><value>Invalid boolean {0}.</value></data>
+  <data name="PositiveBoundary" xml:space="preserve"><value>A boundary must have positive dimensions.</value></data>
+  <data name="BoundaryTooSmall" xml:space="preserve"><value>A boundary is too small to represent.</value></data>
+  <data name="PhysicalPageLimit" xml:space="preserve"><value>The physical page exceeds 14,400 PDF points.</value></data>
+</root>

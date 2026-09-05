@@ -3,6 +3,7 @@ using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Android.Views;
+using System.Globalization;
 using Avalonia;
 using Avalonia.Android;
 using ActionMode = Android.Views.ActionMode;
@@ -63,6 +64,18 @@ public class MainActivity : AvaloniaMainActivity, ITextSelectionMenu
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
+        CultureInfo language;
+        try
+        {
+            language = CultureInfo.GetCultureInfo(Java.Util.Locale.Default?.ToLanguageTag() ?? "en");
+        }
+        catch (CultureNotFoundException)
+        {
+            language = CultureInfo.GetCultureInfo("en");
+        }
+        // Set only the UI language; document number/date parsing must not change.
+        CultureInfo.DefaultThreadCurrentUICulture = language;
+        CultureInfo.CurrentUICulture = language;
         base.OnCreate(savedInstanceState);
         App.TextSelectionMenu = this;
     }

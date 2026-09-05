@@ -13,6 +13,7 @@ using System.Xml.Linq;
 using OfficeIMO.Drawing;
 using SkiaSharp;
 using Survoler.Documents;
+using Survoler.Resources;
 
 namespace Survoler.Rendering;
 
@@ -38,7 +39,7 @@ public sealed class OfdPdfConverter
             {
                 token.ThrowIfCancellationRequested();
                 if (new FileInfo(session.LocalPath).Length > 64L * 1024 * 1024)
-                    throw Invalid("The input exceeds 64 MiB.");
+                    throw Invalid("ConversionInputTooLarge");
                 using var package = new OfdPackage(session.LocalPath, token);
                 using var renderer = new Renderer(package, resources, token);
                 renderer.Write(result.Path);
@@ -50,8 +51,11 @@ public sealed class OfdPdfConverter
         catch (Exception exception)
         {
             result.Dispose();
-            if (exception is InvalidDataException or NotSupportedException or System.Xml.XmlException)
-                throw new DocumentOpenException(exception.Message);
+            if (exception is System.Xml.XmlException)
+                throw new DocumentOpenException(OfdStrings.Get("InvalidOfdXml"));
+            if (exception is InvalidDataException or NotSupportedException)
+                throw new DocumentOpenException(exception.Data.Contains(OfdStrings.DiagnosticMarker)
+                    ? exception.Message : OfdStrings.Get("InvalidOfdPackage"));
             throw;
         }
     }
@@ -119,8 +123,8 @@ public sealed class OfdPdfConverter
         internal void ThrowIfFailed()
         {
             _token.ThrowIfCancellationRequested();
-            if (_truncated) throw Invalid("The generated PDF exceeds 64 MiB.");
-            if (_failure is not null) throw new IOException("The generated PDF could not be written.", _failure);
+            if (_truncated) throw Invalid("OutputTooLarge");
+            if (_failure is not null) throw new IOException(OfdStrings.Get("PdfWriteFailed"), _failure);
         }
     }
 
@@ -157,14 +161,14 @@ public sealed class OfdPdfConverter
         private void Tick()
         {
             _token.ThrowIfCancellationRequested();
-            if (++_objects > MaxObjects) throw Invalid("The object/template budget was exceeded.");
+            if (++_objects > MaxObjects) throw Invalid("ObjectBudget");
         }
 
         private XElement Read(string path, string root)
         {
             Tick();
-            XElement element = _package.ReadXml(path).Root ?? throw Invalid("An XML document is empty.");
-            if (element.Name != Ofd + root) throw Invalid($"Expected OFD {root} in {path}.");
+            XElement element = _package.ReadXml(path).Root ?? throw Invalid("EmptyXml");
+            if (element.Name != Ofd + root) throw Invalid("ExpectedRoot", root, path);
             return element;
         }
 
@@ -172,8 +176,8 @@ public sealed class OfdPdfConverter
         {
             XElement ofd = Read("OFD.xml", "OFD");
             Check(ofd, "Version DocType", "DocBody");
-            if (ofd.Attribute("DocType") is { Value: not "OFD" }) throw Unsupported("Document type");
-            if (ofd.Elements().Count() != 1) throw Invalid("Exactly one DocBody is supported.");
+            if (ofd.Attribute("DocType") is { Value: not "OFD" }) throw Unsupported(OfdStrings.Get("DocumentType"));
+            if (ofd.Elements().Count() != 1) throw Invalid("DocBodyCount");
             XElement body = One(ofd, "DocBody");
             Check(body, "", "DocInfo DocRoot Signatures");
             if (body.Element(Ofd + "DocInfo") is { } info)
@@ -197,10 +201,8 @@ public sealed class OfdPdfConverter
             bool skippedAnnotations = document.Element(Ofd + "Annotations") is not null;
             if (skippedSignatures || skippedAnnotations)
             {
-                string omitted = skippedSignatures && skippedAnnotations ? "seals, signatures and annotations" :
-                    skippedSignatures ? "seals and signatures" : "annotations";
-                Warning = $"Partial OFD preview: {omitted} were skipped. " +
-                    "This preview does not verify digital signatures.";
+                Warning = OfdStrings.Get(skippedSignatures && skippedAnnotations ? "SkippedSignaturesAndAnnotations" :
+                    skippedSignatures ? "SkippedSignatures" : "SkippedAnnotations");
             }
             XElement common = One(document, "CommonData");
             Check(common, "", "MaxUnitID PageArea PublicRes DocumentRes TemplatePage");
@@ -212,29 +214,29 @@ public sealed class OfdPdfConverter
                 Tick();
                 Check(template, "ID Name BaseLoc ZOrder", "");
                 string order = template.Attribute("ZOrder")?.Value ?? "Background";
-                if (order is not ("Background" or "Foreground")) throw Invalid("Invalid template ZOrder.");
+                if (order is not ("Background" or "Foreground")) throw Invalid("InvalidTemplateZOrder");
                 if (!_templates.TryAdd(Id(template), (OfdPackage.Resolve(documentPath, Required(template, "BaseLoc")), order)))
-                    throw Invalid("Duplicate template ID.");
+                    throw Invalid("DuplicateTemplateId");
             }
             XElement pages = One(document, "Pages");
             Check(pages, "", "Page");
             XElement[] entries = pages.Elements().ToArray();
-            if (entries.Length is 0 or > 2000) throw Invalid("The page count must be between 1 and 2000.");
+            if (entries.Length is 0 or > 2000) throw Invalid("PageCount");
             var pageIds = new HashSet<string>(StringComparer.Ordinal);
             using var file = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             using var stream = new BoundedPdfStream(file, _token);
             using var pdf = SKDocument.CreatePdf(stream);
             stream.ThrowIfFailed();
-            if (pdf is null) throw Invalid("The PDF writer is unavailable.");
+            if (pdf is null) throw Invalid("PdfWriterUnavailable");
             foreach (XElement entry in entries)
             {
                 Tick();
                 Check(entry, "ID BaseLoc", "");
-                if (!pageIds.Add(Id(entry))) throw Invalid("Duplicate page ID.");
+                if (!pageIds.Add(Id(entry))) throw Invalid("DuplicatePageId");
                 string pagePath = OfdPackage.Resolve(documentPath, Required(entry, "BaseLoc"));
                 XElement page = Read(pagePath, "Page");
                 SKRect box = page.Element(Ofd + "Area") is { } pageArea ? Area(pageArea) :
-                    defaultArea ?? throw Invalid("No physical page box is defined.");
+                    defaultArea ?? throw Invalid("MissingPhysicalBox");
                 SKCanvas canvas = pdf.BeginPage(box.Width * PointsPerMillimeter, box.Height * PointsPerMillimeter);
                 canvas.Scale(PointsPerMillimeter);
                 canvas.Translate(-box.Left, -box.Top);
@@ -243,7 +245,7 @@ public sealed class OfdPdfConverter
                 stream.ThrowIfFailed();
             }
             _token.ThrowIfCancellationRequested();
-            if (!_hasObjects) throw Invalid("The document has no supported graphic objects.");
+            if (!_hasObjects) throw Invalid("NoGraphicObjects");
             pdf.Close();
             stream.Flush();
             stream.ThrowIfFailed();
@@ -279,21 +281,21 @@ public sealed class OfdPdfConverter
                                 break;
                             case "MultiMedia":
                                 Check(item, "ID Type Format", "MediaFile");
-                                if (Required(item, "Type") != "Image") throw Unsupported("Non-image multimedia");
+                                if (Required(item, "Type") != "Image") throw Unsupported(OfdStrings.Get("NonImageMultimedia"));
                                 if (item.Attribute("Format") is { } format &&
                                     !new[] { "PNG", "JPEG", "JPG" }.Contains(format.Value.ToUpperInvariant()))
-                                    throw Unsupported("Image format " + format.Value);
+                                    throw Unsupported(OfdStrings.Format("ImageFormat", format.Value));
                                 Text(One(item, "MediaFile"));
                                 break;
                             case "ColorSpace":
                                 Check(item, "ID Type BitsPerComponent", "");
                                 if (Required(item, "Type") is not ("RGB" or "GRAY") ||
                                     (item.Attribute("BitsPerComponent")?.Value ?? "8") != "8")
-                                    throw Unsupported("Only 8-bit RGB/GRAY color spaces are supported");
+                                    throw Unsupported(OfdStrings.Get("ColorSpacesSupported"));
                                 break;
                         }
                         if (!scope.TryAdd(Id(item), new Resource(item, baseFile)))
-                            throw Invalid("Duplicate resource ID " + Id(item) + ".");
+                            throw Invalid("DuplicateResourceId", Id(item));
                     }
                 }
             }
@@ -302,7 +304,7 @@ public sealed class OfdPdfConverter
         private void PaintPage(SKCanvas canvas, XElement page, string path, int depth)
         {
             Tick();
-            if (depth > 64) throw Invalid("Template nesting exceeds 64 levels.");
+            if (depth > 64) throw Invalid("TemplateDepth");
             Check(page, "", "Area PageRes Template Content");
             if (page.Element(Ofd + "Area") is { } area) Area(area);
             var scope = new Dictionary<string, Resource>(_common, StringComparer.Ordinal);
@@ -312,8 +314,8 @@ public sealed class OfdPdfConverter
             {
                 Check(template, "TemplateID ZOrder", "");
                 if ((template.Attribute("ZOrder")?.Value ?? "Background") is not ("Background" or "Foreground"))
-                    throw Invalid("Invalid template ZOrder.");
-                if (!_templates.ContainsKey(Required(template, "TemplateID"))) throw Invalid("Unknown template reference.");
+                    throw Invalid("InvalidTemplateZOrder");
+                if (!_templates.ContainsKey(Required(template, "TemplateID"))) throw Invalid("UnknownTemplate");
             }
             PaintTemplates("Background");
             XElement[] layers = Array.Empty<XElement>();
@@ -326,7 +328,7 @@ public sealed class OfdPdfConverter
                     Check(layer, "ID Type", "TextObject PathObject ImageObject");
                     Id(layer);
                     if ((layer.Attribute("Type")?.Value ?? "Body") is not ("Background" or "Body" or "Foreground"))
-                        throw Invalid("Invalid layer type.");
+                        throw Invalid("InvalidLayerType");
                 }
             }
             PaintLayers("Background");
@@ -349,7 +351,7 @@ public sealed class OfdPdfConverter
                     (e.Attribute("ZOrder")?.Value ?? _templates[Required(e, "TemplateID")].Order) == order))
                 {
                     string id = Required(template, "TemplateID");
-                    if (!_activeTemplates.Add(id)) throw Invalid("Cyclic template reference.");
+                    if (!_activeTemplates.Add(id)) throw Invalid("CyclicTemplate");
                     try
                     {
                         string templatePath = _templates[id].Path;
@@ -371,7 +373,7 @@ public sealed class OfdPdfConverter
                 case "TextObject":
                     Check(obj, attributes + "Font Size Fill Stroke", "FillColor TextCode");
                     if (Boolean(obj, "Stroke", false) || !Boolean(obj, "Fill", true))
-                        throw Unsupported("Outlined or non-filled text");
+                        throw Unsupported(OfdStrings.Get("OutlinedText"));
                     break;
                 case "PathObject":
                     Check(obj, attributes + "Fill Stroke LineWidth Rule Cap Join MiterLimit", "FillColor StrokeColor AbbreviatedData");
@@ -413,14 +415,14 @@ public sealed class OfdPdfConverter
             Resource definition = Lookup(scope, Required(obj, "Font"), "Font");
             float size = Positive(Required(obj, "Size"));
             XElement[] codes = obj.Elements(Ofd + "TextCode").ToArray();
-            if (codes.Length == 0) throw Invalid("TextObject has no TextCode.");
+            if (codes.Length == 0) throw Invalid("MissingTextCode");
             var fontText = new StringBuilder();
             foreach (XElement code in codes)
             {
                 _token.ThrowIfCancellationRequested();
                 string value = code.Value;
                 if (value.Length > MaxText - _text - fontText.Length)
-                    throw Invalid("The text budget exceeds one million characters.");
+                    throw Invalid("TextBudget");
                 fontText.Append(value);
             }
             using var font = new SKFont(Typeface(definition, fontText.ToString()), size);
@@ -432,13 +434,13 @@ public sealed class OfdPdfConverter
                 Check(code, "X Y DeltaX DeltaY", "", allowText: true);
                 string text = code.Value;
                 _text = checked(_text + text.Length);
-                if (_text > MaxText) throw Invalid("The text budget exceeds one million characters.");
-                if (text.Length == 0) throw Invalid("Empty TextCode.");
-                if (!font.ContainsGlyphs(text)) throw Invalid("No glyph is available for some OFD text characters.");
+                if (_text > MaxText) throw Invalid("TextBudget");
+                if (text.Length == 0) throw Invalid("EmptyTextCode");
+                if (!font.ContainsGlyphs(text)) throw Invalid("MissingGlyphs");
                 float x = code.Attribute("X") is { } xAttribute ? Number(xAttribute.Value) :
-                    previousX ?? throw Invalid("The first TextCode must define X.");
+                    previousX ?? throw Invalid("FirstTextCodeX");
                 float y = code.Attribute("Y") is { } yAttribute ? Number(yAttribute.Value) :
-                    previousY ?? throw Invalid("The first TextCode must define Y.");
+                    previousY ?? throw Invalid("FirstTextCodeY");
                 Rune[] runes = text.EnumerateRunes().ToArray();
                 if (code.Attribute("DeltaX") is null && code.Attribute("DeltaY") is null)
                 {
@@ -468,7 +470,7 @@ public sealed class OfdPdfConverter
         {
             if (value is null) return Array.Empty<float>();
             string[] tokens = Words(value);
-            if (tokens.Length == 0) throw Invalid("Empty text delta.");
+            if (tokens.Length == 0) throw Invalid("EmptyTextDelta");
             var result = new List<float>();
             for (int i = 0; i < tokens.Length; i++)
             {
@@ -477,14 +479,14 @@ public sealed class OfdPdfConverter
                 if (tokens[i] == "g")
                 {
                     if (i + 2 >= tokens.Length || !int.TryParse(tokens[++i], NumberStyles.None, CultureInfo.InvariantCulture, out repeat) || repeat <= 0)
-                        throw Invalid("Invalid delta repetition.");
+                        throw Invalid("InvalidDeltaRepeat");
                     i++;
                 }
-                if (repeat > count - result.Count) throw Invalid("Text delta expansion exceeds its rune count.");
+                if (repeat > count - result.Count) throw Invalid("TextDeltaExpansion");
                 float delta = Number(tokens[i]);
                 for (int j = 0; j < repeat; j++) result.Add(delta);
             }
-            if (result.Count < count - 1) throw Unsupported("Short text delta lists");
+            if (result.Count < count - 1) throw Unsupported(OfdStrings.Get("ShortTextDeltas"));
             return result.ToArray();
         }
 
@@ -500,10 +502,10 @@ public sealed class OfdPdfConverter
                     // The subset accepts TrueType outlines, including collections, not arbitrary font containers.
                     if (bytes.Length < 4 || !((bytes[0] == 0 && bytes[1] == 1 && bytes[2] == 0 && bytes[3] == 0) ||
                         Encoding.ASCII.GetString(bytes, 0, 4) is "true" or "ttcf"))
-                        throw Unsupported("Embedded fonts must contain TrueType outlines");
+                        throw Unsupported(OfdStrings.Get("TrueTypeRequired"));
                     embedded = Load(key, bytes);
                 }
-                if (!Covers(embedded)) throw Invalid("The embedded OFD font lacks some text glyphs.");
+                if (!Covers(embedded)) throw Invalid("EmbeddedFontMissingGlyphs");
                 return embedded;
             }
 
@@ -532,15 +534,15 @@ public sealed class OfdPdfConverter
                     // Shared native typefaces can corrupt concurrent PDF ToUnicode maps.
                     // Open the default font only as a byte source; PDF drawing uses a fresh owned face.
                     using SKStreamAsset source = SKTypeface.Default.OpenStream(out int collectionIndex)
-                        ?? throw Invalid("The desktop fallback font cannot be read.");
+                        ?? throw Invalid("FallbackFontReadFailed");
                     ReserveFontBytes(source.Length);
-                    using SKData data = SKData.Create(source) ?? throw Invalid("The desktop fallback font cannot be loaded.");
-                    desktop = SKTypeface.FromData(data, collectionIndex) ?? throw Invalid("The desktop fallback font cannot be loaded.");
+                    using SKData data = SKData.Create(source) ?? throw Invalid("FallbackFontLoadFailed");
+                    desktop = SKTypeface.FromData(data, collectionIndex) ?? throw Invalid("FallbackFontLoadFailed");
                     _fonts.Add(key, desktop);
                 }
                 if (Covers(desktop)) return desktop;
             }
-            throw Invalid("No available OFD font covers all characters in the text object.");
+            throw Invalid("NoFontCoverage");
 
             bool Covers(SKTypeface typeface)
             {
@@ -555,7 +557,7 @@ public sealed class OfdPdfConverter
             {
                 ReserveFontBytes(bytes.Length);
                 using SKData data = SKData.CreateCopy(bytes);
-                SKTypeface typeface = SKTypeface.FromData(data) ?? throw Invalid("An OFD font could not be loaded.");
+                SKTypeface typeface = SKTypeface.FromData(data) ?? throw Invalid("FontLoadFailed");
                 _fonts.Add(key, typeface);
                 return typeface;
             }
@@ -564,7 +566,7 @@ public sealed class OfdPdfConverter
             {
                 _token.ThrowIfCancellationRequested();
                 if (count <= 0 || count > 64L * 1024 * 1024 - _fontBytes)
-                    throw Invalid("The loaded font budget exceeds 64 MiB or a font is empty.");
+                    throw Invalid("FontBudget");
                 _fontBytes += count;
             }
         }
@@ -580,7 +582,7 @@ public sealed class OfdPdfConverter
             {
                 "NonZero" => SKPathFillType.Winding,
                 "Even-Odd" => SKPathFillType.EvenOdd,
-                _ => throw Unsupported("Path fill rule")
+                _ => throw Unsupported(OfdStrings.Get("PathFillRule"))
             };
             bool started = false;
             bool openSubpath = false;
@@ -588,11 +590,11 @@ public sealed class OfdPdfConverter
             {
                 Tick();
                 string command = Take();
-                if (!openSubpath && command is not ("M" or "S")) throw Invalid("A subpath must start with S or M.");
+                if (!openSubpath && command is not ("M" or "S")) throw Invalid("SubpathStart");
                 switch (command)
                 {
                     case "M":
-                        if (openSubpath) throw Unsupported("M within an open subpath");
+                        if (openSubpath) throw Unsupported(OfdStrings.Get("MoveInOpenSubpath"));
                         goto case "S";
                     case "S": path.MoveTo(Next(), Next()); started = true; openSubpath = true; break;
                     case "L": path.LineTo(Next(), Next()); break;
@@ -601,24 +603,24 @@ public sealed class OfdPdfConverter
                     case "A":
                         float rx = Next(), ry = Next(), rotation = Next(), large = Next(), sweep = Next();
                         if (rx < 0 || ry < 0 || (large != 0 && large != 1) || (sweep != 0 && sweep != 1))
-                            throw Invalid("Invalid elliptical arc.");
+                            throw Invalid("InvalidArc");
                         path.ArcTo(rx, ry, rotation, large == 0 ? SKPathArcSize.Small : SKPathArcSize.Large,
                             sweep == 0 ? SKPathDirection.CounterClockwise : SKPathDirection.Clockwise, Next(), Next());
                         break;
                     case "C": path.Close(); openSubpath = false; break;
-                    default: throw Unsupported("Path command " + command);
+                    default: throw Unsupported(OfdStrings.Format("PathCommand", command));
                 }
             }
-            if (!started) throw Invalid("Empty path.");
+            if (!started) throw Invalid("EmptyPath");
             using var paint = new SKPaint { IsAntialias = true };
             // Validate colors even when their corresponding operation is disabled.
             SKColor fill = Color(obj.Element(Ofd + "FillColor"), scope, alpha);
             SKColor stroke = Color(obj.Element(Ofd + "StrokeColor"), scope, alpha);
             paint.StrokeWidth = Positive(obj.Attribute("LineWidth")?.Value ?? "0.353");
             paint.StrokeCap = (obj.Attribute("Cap")?.Value ?? "Butt") switch
-            { "Butt" => SKStrokeCap.Butt, "Round" => SKStrokeCap.Round, "Square" => SKStrokeCap.Square, _ => throw Unsupported("Line cap") };
+            { "Butt" => SKStrokeCap.Butt, "Round" => SKStrokeCap.Round, "Square" => SKStrokeCap.Square, _ => throw Unsupported(OfdStrings.Get("LineCap")) };
             paint.StrokeJoin = (obj.Attribute("Join")?.Value ?? "Miter") switch
-            { "Miter" => SKStrokeJoin.Miter, "Round" => SKStrokeJoin.Round, "Bevel" => SKStrokeJoin.Bevel, _ => throw Unsupported("Line join") };
+            { "Miter" => SKStrokeJoin.Miter, "Round" => SKStrokeJoin.Round, "Bevel" => SKStrokeJoin.Bevel, _ => throw Unsupported(OfdStrings.Get("LineJoin")) };
             paint.StrokeMiter = Positive(obj.Attribute("MiterLimit")?.Value ?? "3.528");
             if (Boolean(obj, "Fill", false))
             {
@@ -641,7 +643,7 @@ public sealed class OfdPdfConverter
 
             string Take()
             {
-                if (!match.Success) throw Invalid("Incomplete path command.");
+                if (!match.Success) throw Invalid("IncompletePathCommand");
                 string value = match.Value;
                 match = match.NextMatch();
                 return value;
@@ -651,7 +653,7 @@ public sealed class OfdPdfConverter
         private void PaintImage(SKCanvas canvas, XElement obj, Dictionary<string, Resource> scope, byte alpha)
         {
             _token.ThrowIfCancellationRequested();
-            if (++_imageDraws > 10000) throw Invalid("The image draw budget exceeds 10,000 operations.");
+            if (++_imageDraws > 10000) throw Invalid("ImageDrawBudget");
             Resource resource = Lookup(scope, Required(obj, "ResourceID"), "MultiMedia");
             string path = OfdPackage.Resolve(resource.BaseFile, Text(One(resource.Element, "MediaFile")));
             if (!_images.TryGetValue(path, out SKImage? image))
@@ -659,7 +661,7 @@ public sealed class OfdPdfConverter
                 byte[] bytes = ReadAsset(path);
                 bool png = bytes.Length >= 8 && bytes.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 });
                 bool jpeg = bytes.Length >= 3 && bytes[0] == 255 && bytes[1] == 216 && bytes[2] == 255;
-                if (!png && !jpeg) throw Unsupported("Only PNG and JPEG images are supported");
+                if (!png && !jpeg) throw Unsupported(OfdStrings.Get("ImageTypesSupported"));
                 if (png)
                 {
                     // Some native PNG codecs expose only the first APNG frame.
@@ -667,30 +669,30 @@ public sealed class OfdPdfConverter
                     while (offset < bytes.Length)
                     {
                         Tick();
-                        if (bytes.Length - offset < 12) throw Invalid("Truncated PNG chunk.");
+                        if (bytes.Length - offset < 12) throw Invalid("TruncatedPngChunk");
                         uint length = BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(offset, 4));
-                        if (length > bytes.Length - offset - 12) throw Invalid("Invalid PNG chunk length.");
-                        if (bytes.AsSpan(offset + 4, 4).SequenceEqual("acTL"u8)) throw Unsupported("Animated PNG images");
+                        if (length > bytes.Length - offset - 12) throw Invalid("InvalidPngChunkLength");
+                        if (bytes.AsSpan(offset + 4, 4).SequenceEqual("acTL"u8)) throw Unsupported(OfdStrings.Get("AnimatedPng"));
                         offset += (int)length + 12;
                     }
                 }
                 using SKData data = SKData.CreateCopy(bytes);
-                using SKCodec codec = SKCodec.Create(data) ?? throw Invalid("Invalid image.");
+                using SKCodec codec = SKCodec.Create(data) ?? throw Invalid("InvalidImage");
                 SKImageInfo info = codec.Info;
                 long pixels = (long)info.Width * info.Height;
                 if (info.Width <= 0 || info.Height <= 0 || pixels > 5000000)
-                    throw Invalid("An image exceeds the five-million-pixel limit.");
-                if (pixels > 16000000 - _decodedPixels) throw Invalid("The decoded image budget exceeds 16 million pixels.");
-                if (codec.FrameCount > 1) throw Unsupported("Animated images");
-                if (codec.EncodedOrigin != SKEncodedOrigin.TopLeft) throw Unsupported("Images with EXIF orientation");
+                    throw Invalid("ImagePixelLimit");
+                if (pixels > 16000000 - _decodedPixels) throw Invalid("DecodedImageBudget");
+                if (codec.FrameCount > 1) throw Unsupported(OfdStrings.Get("AnimatedImages"));
+                if (codec.EncodedOrigin != SKEncodedOrigin.TopLeft) throw Unsupported(OfdStrings.Get("ExifOrientation"));
                 _token.ThrowIfCancellationRequested();
                 _decodedPixels += pixels;
                 using var bitmap = new SKBitmap(new SKImageInfo(info.Width, info.Height, SKColorType.Bgra8888, SKAlphaType.Premul));
-                if (codec.GetPixels(bitmap.Info, bitmap.GetPixels()) != SKCodecResult.Success) throw Invalid("Image decoding failed.");
+                if (codec.GetPixels(bitmap.Info, bitmap.GetPixels()) != SKCodecResult.Success) throw Invalid("ImageDecodeFailed");
                 _token.ThrowIfCancellationRequested();
                 // Immutable pixels can be retained by SKImage without a second decoded copy.
                 bitmap.SetImmutable();
-                image = SKImage.FromBitmap(bitmap) ?? throw Invalid("An image could not be retained.");
+                image = SKImage.FromBitmap(bitmap) ?? throw Invalid("ImageRetainFailed");
                 _images.Add(path, image);
             }
             using var paint = new SKPaint { Color = SKColors.White.WithAlpha(alpha), IsAntialias = true };
@@ -703,7 +705,7 @@ public sealed class OfdPdfConverter
             _token.ThrowIfCancellationRequested();
             byte[] bytes = _package.ReadBytes(path);
             _assetBytes += bytes.Length;
-            if (_assetBytes > 256L * 1024 * 1024) throw Invalid("The cumulative asset-read budget exceeds 256 MiB.");
+            if (_assetBytes > 256L * 1024 * 1024) throw Invalid("AssetReadBudget");
             return bytes;
         }
 
@@ -714,7 +716,7 @@ public sealed class OfdPdfConverter
             string[] values = Words(Required(element, "Value"));
             string type = element.Attribute("ColorSpace") is { } reference
                 ? Required(Lookup(scope, reference.Value, "ColorSpace").Element, "Type") : "RGB";
-            if (values.Length != (type == "GRAY" ? 1 : 3)) throw Invalid("Invalid color component count.");
+            if (values.Length != (type == "GRAY" ? 1 : 3)) throw Invalid("ColorComponentCount");
             byte r = Byte(values[0]), g = type == "GRAY" ? r : Byte(values[1]), b = type == "GRAY" ? r : Byte(values[2]);
             byte alpha = Byte(element.Attribute("Alpha")?.Value ?? "255");
             return new SKColor(r, g, b, (byte)((alpha * objectAlpha + 127) / 255));
@@ -723,7 +725,7 @@ public sealed class OfdPdfConverter
         private static Resource Lookup(Dictionary<string, Resource> scope, string id, string kind)
         {
             if (!scope.TryGetValue(id, out Resource? resource) || resource.Element.Name != Ofd + kind)
-                throw Invalid($"Unknown {kind} resource {id}.");
+                throw Invalid("UnknownResource", kind, id);
             return resource;
         }
 
@@ -738,7 +740,7 @@ public sealed class OfdPdfConverter
 
     private static void Check(XElement element, string attributes, string children, bool allowText = false)
     {
-        if (element.Name.Namespace != Ofd) throw Unsupported("Foreign XML namespace");
+        if (element.Name.Namespace != Ofd) throw Unsupported(OfdStrings.Get("ForeignXmlNamespace"));
         string[] allowedAttributes = Words(attributes), allowedChildren = Words(children);
         foreach (XAttribute attribute in element.Attributes())
             if (attribute.Name == XNamespace.Xml + "space" && attribute.Value is "default" or "preserve") continue;
@@ -748,58 +750,58 @@ public sealed class OfdPdfConverter
             if (child.Name.Namespace != Ofd || !allowedChildren.Contains(child.Name.LocalName))
                 throw Unsupported(element.Name.LocalName + "/" + child.Name);
         if (!allowText && element.Nodes().OfType<XText>().Any(t => !string.IsNullOrWhiteSpace(t.Value)))
-            throw Invalid("Unexpected text in " + element.Name.LocalName + ".");
+            throw Invalid("UnexpectedText", element.Name.LocalName);
         // Repeated containers would otherwise be silently ignored by Element().
         foreach (var group in element.Elements().GroupBy(e => e.Name.LocalName))
             if (group.Count() > 1 && group.Key is not ("Page" or "Layer" or "TextObject" or "PathObject" or "ImageObject" or
                 "TextCode" or "Template" or "TemplatePage" or "PublicRes" or "DocumentRes" or "PageRes" or
                 "Font" or "MultiMedia" or "ColorSpace" or "Keyword"))
-                throw Invalid("Duplicate " + group.Key + ".");
+                throw Invalid("DuplicateElement", group.Key);
     }
 
-    private static XElement One(XElement parent, string name) => parent.Element(Ofd + name) ?? throw Invalid("Missing " + name + ".");
+    private static XElement One(XElement parent, string name) => parent.Element(Ofd + name) ?? throw Invalid("MissingElement", name);
     private static void Leaf(XElement element) => Check(element, "", "", allowText: true);
     private static string Text(XElement element)
     {
         Leaf(element);
-        return string.IsNullOrWhiteSpace(element.Value) ? throw Invalid("Empty " + element.Name.LocalName + ".") : element.Value.Trim();
+        return string.IsNullOrWhiteSpace(element.Value) ? throw Invalid("EmptyElement", element.Name.LocalName) : element.Value.Trim();
     }
     private static string Required(XElement element, string attribute) =>
         element.Attribute(attribute)?.Value is { } value && !string.IsNullOrWhiteSpace(value)
-            ? value : throw Invalid("Missing " + element.Name.LocalName + "@" + attribute + ".");
+            ? value : throw Invalid("MissingAttribute", element.Name.LocalName, attribute);
     private static string Id(XElement element)
     {
         string id = Required(element, "ID");
         if (!uint.TryParse(id, NumberStyles.None, CultureInfo.InvariantCulture, out uint number) || number == 0)
-            throw Invalid("Invalid OFD ID.");
+            throw Invalid("InvalidId");
         return id;
     }
     private static string[] Words(string value) => value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
     private static float Number(string value) => float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float result)
-        ? Finite(result) : throw Invalid("Invalid number.");
+        ? Finite(result) : throw Invalid("InvalidNumber");
     private static float Finite(float value) => float.IsFinite(value) && Math.Abs(value) <= 1000000
-        ? value : throw Invalid("A coordinate is non-finite or exceeds the supported range.");
+        ? value : throw Invalid("CoordinateRange");
     private static float Positive(string value)
     {
         float number = Number(value);
-        return number > 0 ? number : throw Invalid("A dimension must be positive.");
+        return number > 0 ? number : throw Invalid("PositiveDimension");
     }
     private static float[] Numbers(string value, int count)
     {
         string[] words = Words(value);
-        if (words.Length != count) throw Invalid("Invalid coordinate count.");
+        if (words.Length != count) throw Invalid("CoordinateCount");
         return words.Select(Number).ToArray();
     }
     private static byte Byte(string value) => byte.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out byte result)
-        ? result : throw Invalid("A color/alpha component must be an integer between 0 and 255.");
+        ? result : throw Invalid("ColorComponentRange");
     private static bool Boolean(XElement element, string name, bool fallback) => element.Attribute(name)?.Value switch
-    { null => fallback, "true" or "1" => true, "false" or "0" => false, _ => throw Invalid("Invalid boolean " + name + ".") };
+    { null => fallback, "true" or "1" => true, "false" or "0" => false, _ => throw Invalid("InvalidBoolean", name) };
     private static SKRect Box(string value)
     {
         float[] numbers = Numbers(value, 4);
-        if (numbers[2] <= 0 || numbers[3] <= 0) throw Invalid("A boundary must have positive dimensions.");
+        if (numbers[2] <= 0 || numbers[3] <= 0) throw Invalid("PositiveBoundary");
         var box = new SKRect(numbers[0], numbers[1], Finite(numbers[0] + numbers[2]), Finite(numbers[1] + numbers[3]));
-        if (box.Width <= 0 || box.Height <= 0) throw Invalid("A boundary is too small to represent.");
+        if (box.Width <= 0 || box.Height <= 0) throw Invalid("BoundaryTooSmall");
         return box;
     }
     private static SKRect Area(XElement element)
@@ -809,9 +811,20 @@ public sealed class OfdPdfConverter
         SKRect result = Box(Text(One(element, "PhysicalBox")));
         // PDF's default user space cannot represent arbitrarily large physical pages reliably.
         if (result.Width * PointsPerMillimeter > 14400 || result.Height * PointsPerMillimeter > 14400)
-            throw Invalid("The physical page exceeds 14,400 PDF points.");
+            throw Invalid("PhysicalPageLimit");
         return result;
     }
-    private static InvalidDataException Invalid(string message) => new("Invalid OFD: " + message);
-    private static NotSupportedException Unsupported(string feature) => new("Unsupported OFD feature: " + feature + ".");
+    private static InvalidDataException Invalid(string key, params object[] args)
+    {
+        var exception = new InvalidDataException(OfdStrings.Format("InvalidPrefix", OfdStrings.Format(key, args)));
+        exception.Data[OfdStrings.DiagnosticMarker] = true;
+        return exception;
+    }
+
+    private static NotSupportedException Unsupported(string feature)
+    {
+        var exception = new NotSupportedException(OfdStrings.Format("UnsupportedPrefix", feature));
+        exception.Data[OfdStrings.DiagnosticMarker] = true;
+        return exception;
+    }
 }

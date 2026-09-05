@@ -7,6 +7,7 @@ using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using Survoler.Documents;
+using Survoler.Resources;
 
 namespace Survoler.Rendering;
 
@@ -28,11 +29,11 @@ internal sealed class OfdPackage : IDisposable
         _stream = File.OpenRead(path);
         try
         {
-            if (_stream.Length > PreviewLimits.MaxInputBytes) throw Invalid("Input exceeds 64 MiB.");
+            if (_stream.Length > PreviewLimits.MaxInputBytes) throw Invalid("InputTooLarge");
             _archive = new ZipArchive(_stream, ZipArchiveMode.Read, leaveOpen: true);
             try
             {
-                if (_archive.Entries.Count > PreviewLimits.MaxPackageParts) throw Invalid("Too many ZIP entries.");
+                if (_archive.Entries.Count > PreviewLimits.MaxPackageParts) throw Invalid("TooManyZipEntries");
                 long total = 0;
                 var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (ZipArchiveEntry entry in _archive.Entries)
@@ -40,17 +41,17 @@ internal sealed class OfdPackage : IDisposable
                     token.ThrowIfCancellationRequested();
                     string name = entry.FullName;
                     if (name.StartsWith('/') || name.Contains('\\') || name.Contains(':') || name.Any(char.IsControl) ||
-                        name.Split('/').Any(p => p is "." or "..")) throw Invalid("Unsafe ZIP entry path.");
+                        name.Split('/').Any(p => p is "." or "..")) throw Invalid("UnsafeZipPath");
                     if (name.EndsWith('/')) continue;
                     if (string.IsNullOrEmpty(name) || name.Contains("//") || !names.Add(name))
-                        throw Invalid("Empty or duplicate ZIP entry path.");
+                        throw Invalid("EmptyOrDuplicateZipPath");
                     total = checked(total + entry.Length);
                     if (entry.Length > PreviewLimits.MaxPartBytes || total > PreviewLimits.MaxTotalUncompressedBytes ||
                         entry.Length / (double)Math.Max(1, entry.CompressedLength) > PreviewLimits.MaxCompressionRatio)
-                        throw Invalid("ZIP expansion limits exceeded.");
+                        throw Invalid("ZipExpansionLimit");
                     _entries.Add(name, entry);
                 }
-                if (!_entries.ContainsKey("OFD.xml")) throw Invalid("The package has no OFD.xml entry.");
+                if (!_entries.ContainsKey("OFD.xml")) throw Invalid("MissingOfdEntry");
             }
             catch
             {
@@ -68,9 +69,9 @@ internal sealed class OfdPackage : IDisposable
     internal byte[] ReadBytes(string path, long limit = PreviewLimits.MaxPartBytes)
     {
         _token.ThrowIfCancellationRequested();
-        if (!_entries.TryGetValue(path, out ZipArchiveEntry? entry)) throw Invalid("Missing package entry: " + path);
+        if (!_entries.TryGetValue(path, out ZipArchiveEntry? entry)) throw Invalid("MissingPackageEntry", path);
         if (entry.Length > limit || entry.Length > PreviewLimits.MaxTotalUncompressedBytes - _readBytes)
-            throw Invalid("Package read budget exceeded.");
+            throw Invalid("PackageReadBudget");
         using Stream source = entry.Open();
         byte[] result = new byte[checked((int)entry.Length)];
         int offset = 0;
@@ -78,11 +79,11 @@ internal sealed class OfdPackage : IDisposable
         {
             _token.ThrowIfCancellationRequested();
             int count = source.Read(result, offset, Math.Min(65536, result.Length - offset));
-            if (count == 0) throw Invalid("Truncated package entry.");
+            if (count == 0) throw Invalid("TruncatedPackageEntry");
             _readBytes += count;
             offset += count;
         }
-        if (source.ReadByte() != -1) throw Invalid("Package entry exceeds its declared length.");
+        if (source.ReadByte() != -1) throw Invalid("PackageEntryLength");
         return result;
     }
 
@@ -93,7 +94,7 @@ internal sealed class OfdPackage : IDisposable
         byte[] bytes = ReadBytes(path, Math.Min(8 * 1024 * 1024, 16 * 1024 * 1024 - _xmlBytes));
         _xmlBytes += bytes.Length;
         if (bytes.Length > 8 * 1024 * 1024 || _xmlBytes > 16 * 1024 * 1024)
-            throw Invalid("XML size budget exceeded.");
+            throw Invalid("XmlSizeBudget");
         var settings = new XmlReaderSettings
         {
             DtdProcessing = DtdProcessing.Prohibit,
@@ -110,9 +111,9 @@ internal sealed class OfdPackage : IDisposable
             while (reader.Read())
             {
                 _token.ThrowIfCancellationRequested();
-                if (reader.Depth > 64 || reader.AttributeCount > 64) throw Invalid("XML complexity limit exceeded.");
+                if (reader.Depth > 64 || reader.AttributeCount > 64) throw Invalid("XmlComplexityLimit");
                 _xmlNodes += 1 + reader.AttributeCount;
-                if (_xmlNodes > 200000) throw Invalid("XML node budget exceeded.");
+                if (_xmlNodes > 200000) throw Invalid("XmlNodeBudget");
             }
         }
         using var data = new MemoryStream(bytes, writable: false);
@@ -126,7 +127,7 @@ internal sealed class OfdPackage : IDisposable
     {
         if (string.IsNullOrWhiteSpace(reference) || reference.Contains('\\') || reference.Contains(':') ||
             reference.Any(char.IsControl) || reference.Contains('?') || reference.Contains('#'))
-            throw Invalid("Invalid package resource reference.");
+            throw Invalid("InvalidResourceReference");
         var segments = reference.StartsWith('/') ? new List<string>() :
             baseEntryPath.Split('/').SkipLast(1).ToList();
         foreach (string segment in reference.Split('/'))
@@ -134,12 +135,12 @@ internal sealed class OfdPackage : IDisposable
             if (segment is "" or ".") continue;
             if (segment == "..")
             {
-                if (segments.Count == 0) throw Invalid("Resource reference escapes the package.");
+                if (segments.Count == 0) throw Invalid("ResourceReferenceEscape");
                 segments.RemoveAt(segments.Count - 1);
             }
             else segments.Add(segment);
         }
-        if (segments.Count == 0) throw Invalid("Resource reference does not name a file.");
+        if (segments.Count == 0) throw Invalid("ResourceReferenceNotFile");
         return string.Join('/', segments);
     }
 
@@ -149,5 +150,10 @@ internal sealed class OfdPackage : IDisposable
         _stream.Dispose();
     }
 
-    private static InvalidDataException Invalid(string message) => new("Invalid OFD: " + message);
+    private static InvalidDataException Invalid(string key, params object[] args)
+    {
+        var exception = new InvalidDataException(OfdStrings.Format("InvalidPrefix", OfdStrings.Format(key, args)));
+        exception.Data[OfdStrings.DiagnosticMarker] = true;
+        return exception;
+    }
 }

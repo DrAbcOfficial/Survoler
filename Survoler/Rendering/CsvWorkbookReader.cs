@@ -6,6 +6,7 @@ using System.Xml;
 using Microsoft.VisualBasic.FileIO;
 using OfficeIMO.Excel;
 using Survoler.Documents;
+using Survoler.Resources;
 
 namespace Survoler.Rendering;
 
@@ -17,7 +18,7 @@ public static class CsvWorkbookReader
         using FileStream stream = File.OpenRead(path);
         if (stream.Length > PreviewLimits.MaxInputBytes)
         {
-            throw new DocumentOpenException("This file is too large for quick preview.");
+            throw new DocumentOpenException(Strings.Get("FileTooLarge"));
         }
 
         Span<byte> header = stackalloc byte[4];
@@ -28,7 +29,7 @@ public static class CsvWorkbookReader
             ((header[0] == 0xFF && header[1] == 0xFE && header[2] == 0 && header[3] == 0) ||
              (header[0] == 0 && header[1] == 0 && header[2] == 0xFE && header[3] == 0xFF)))
         {
-            throw new DocumentOpenException("CSV must use UTF-8 or UTF-16 with a BOM.");
+            throw new DocumentOpenException(Strings.Get("CsvEncoding"));
         }
         if (count >= 3 && header[0] == 0xEF && header[1] == 0xBB && header[2] == 0xBF)
         {
@@ -73,7 +74,7 @@ public static class CsvWorkbookReader
                 if (rows > 10000 || fields.Length > 256 || cells > 100000)
                 {
                     throw new DocumentOpenException(
-                        "CSV preview is limited to 10,000 rows, 256 columns and 100,000 cells.");
+                        Strings.Get("CsvLimits"));
                 }
                 columns = Math.Max(columns, fields.Length);
                 for (int column = 0; column < fields.Length; column++)
@@ -81,7 +82,7 @@ public static class CsvWorkbookReader
                     string field = fields[column];
                     if (field.Length > 32767)
                     {
-                        throw new DocumentOpenException("A CSV field exceeds 32,767 characters.");
+                        throw new DocumentOpenException(Strings.Get("CsvFieldLimit"));
                     }
                     XmlConvert.VerifyXmlChars(field);
                     // Text setters preserve identifiers and never interpret CSV fields as formulas.
@@ -91,7 +92,7 @@ public static class CsvWorkbookReader
             }
             if (rows == 0)
             {
-                throw new DocumentOpenException("The CSV file contains no records to preview.");
+                throw new DocumentOpenException(Strings.Get("CsvEmpty"));
             }
             for (int column = 1; column <= columns; column++)
             {
@@ -106,9 +107,9 @@ public static class CsvWorkbookReader
             document.Dispose();
             DocumentOpenException? failure = exception switch
             {
-                DecoderFallbackException => new DocumentOpenException("CSV must use UTF-8 or UTF-16 with a BOM."),
-                MalformedLineException => new DocumentOpenException("The CSV file contains malformed quoted fields."),
-                XmlException => new DocumentOpenException("The CSV file contains unsupported control characters."),
+                DecoderFallbackException => new DocumentOpenException(Strings.Get("CsvEncoding")),
+                MalformedLineException => new DocumentOpenException(Strings.Get("CsvMalformed")),
+                XmlException => new DocumentOpenException(Strings.Get("CsvControlCharacters")),
                 _ => null
             };
             if (failure is not null)

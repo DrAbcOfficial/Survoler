@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="InvalidPrefix" xml:space="preserve"><value>无效的 OFD：{0}</value></data>
+  <data name="UnsupportedPrefix" xml:space="preserve"><value>不支持的 OFD 功能：{0}。</value></data>
+  <data name="InvalidOfdXml" xml:space="preserve"><value>无效的 OFD XML：不支持 DTD 或格式错误的 XML。</value></data>
+  <data name="InvalidOfdPackage" xml:space="preserve"><value>无效的 OFD：文档包无效或使用了不支持的 ZIP 功能。</value></data>
+  <data name="InputTooLarge" xml:space="preserve"><value>输入文件超过 64 MiB。</value></data>
+  <data name="TooManyZipEntries" xml:space="preserve"><value>ZIP 条目过多。</value></data>
+  <data name="UnsafeZipPath" xml:space="preserve"><value>ZIP 条目路径不安全。</value></data>
+  <data name="EmptyOrDuplicateZipPath" xml:space="preserve"><value>ZIP 条目路径为空或重复。</value></data>
+  <data name="ZipExpansionLimit" xml:space="preserve"><value>超出 ZIP 解压限制。</value></data>
+  <data name="MissingOfdEntry" xml:space="preserve"><value>文档包缺少 OFD.xml 条目。</value></data>
+  <data name="MissingPackageEntry" xml:space="preserve"><value>缺少文档包条目：{0}</value></data>
+  <data name="PackageReadBudget" xml:space="preserve"><value>超出文档包读取限额。</value></data>
+  <data name="TruncatedPackageEntry" xml:space="preserve"><value>文档包条目被截断。</value></data>
+  <data name="PackageEntryLength" xml:space="preserve"><value>文档包条目超出其声明的长度。</value></data>
+  <data name="XmlSizeBudget" xml:space="preserve"><value>超出 XML 大小限额。</value></data>
+  <data name="XmlComplexityLimit" xml:space="preserve"><value>超出 XML 复杂度限制。</value></data>
+  <data name="XmlNodeBudget" xml:space="preserve"><value>超出 XML 节点数量限额。</value></data>
+  <data name="InvalidResourceReference" xml:space="preserve"><value>文档包资源引用无效。</value></data>
+  <data name="ResourceReferenceEscape" xml:space="preserve"><value>资源引用超出文档包范围。</value></data>
+  <data name="ResourceReferenceNotFile" xml:space="preserve"><value>资源引用未指向文件。</value></data>
+  <data name="ConversionInputTooLarge" xml:space="preserve"><value>输入文件超过 64 MiB。</value></data>
+  <data name="OutputTooLarge" xml:space="preserve"><value>生成的 PDF 超过 64 MiB。</value></data>
+  <data name="PdfWriteFailed" xml:space="preserve"><value>无法写入生成的 PDF。</value></data>
+  <data name="ObjectBudget" xml:space="preserve"><value>超出对象或模板数量限额。</value></data>
+  <data name="EmptyXml" xml:space="preserve"><value>XML 文档为空。</value></data>
+  <data name="ExpectedRoot" xml:space="preserve"><value>{1} 中应为 OFD {0} 元素。</value></data>
+  <data name="DocumentType" xml:space="preserve"><value>文档类型</value></data>
+  <data name="DocBodyCount" xml:space="preserve"><value>仅支持恰好一个 DocBody。</value></data>
+  <data name="SkippedSignaturesAndAnnotations" xml:space="preserve"><value>OFD 预览不完整：已跳过印章、签名和批注。此预览不会验证数字签名。</value></data>
+  <data name="SkippedSignatures" xml:space="preserve"><value>OFD 预览不完整：已跳过印章和签名。此预览不会验证数字签名。</value></data>
+  <data name="SkippedAnnotations" xml:space="preserve"><value>OFD 预览不完整：已跳过批注。此预览不会验证数字签名。</value></data>
+  <data name="InvalidTemplateZOrder" xml:space="preserve"><value>模板 ZOrder 无效。</value></data>
+  <data name="DuplicateTemplateId" xml:space="preserve"><value>模板 ID 重复。</value></data>
+  <data name="PageCount" xml:space="preserve"><value>页数必须在 1 到 2000 之间。</value></data>
+  <data name="PdfWriterUnavailable" xml:space="preserve"><value>PDF 写入器不可用。</value></data>
+  <data name="DuplicatePageId" xml:space="preserve"><value>页面 ID 重复。</value></data>
+  <data name="MissingPhysicalBox" xml:space="preserve"><value>未定义页面物理区域。</value></data>
+  <data name="NoGraphicObjects" xml:space="preserve"><value>文档中没有支持的图形对象。</value></data>
+  <data name="NonImageMultimedia" xml:space="preserve"><value>非图像多媒体</value></data>
+  <data name="ImageFormat" xml:space="preserve"><value>图像格式 {0}</value></data>
+  <data name="ColorSpacesSupported" xml:space="preserve"><value>仅支持 8 位 RGB/GRAY 色彩空间</value></data>
+  <data name="DuplicateResourceId" xml:space="preserve"><value>资源 ID {0} 重复。</value></data>
+  <data name="TemplateDepth" xml:space="preserve"><value>模板嵌套超过 64 层。</value></data>
+  <data name="UnknownTemplate" xml:space="preserve"><value>未知的模板引用。</value></data>
+  <data name="InvalidLayerType" xml:space="preserve"><value>图层类型无效。</value></data>
+  <data name="CyclicTemplate" xml:space="preserve"><value>模板存在循环引用。</value></data>
+  <data name="OutlinedText" xml:space="preserve"><value>描边或未填充的文本</value></data>
+  <data name="MissingTextCode" xml:space="preserve"><value>TextObject 缺少 TextCode。</value></data>
+  <data name="TextBudget" xml:space="preserve"><value>文本超出一百万字符的限额。</value></data>
+  <data name="EmptyTextCode" xml:space="preserve"><value>TextCode 为空。</value></data>
+  <data name="MissingGlyphs" xml:space="preserve"><value>部分 OFD 文本字符没有可用字形。</value></data>
+  <data name="FirstTextCodeX" xml:space="preserve"><value>第一个 TextCode 必须定义 X。</value></data>
+  <data name="FirstTextCodeY" xml:space="preserve"><value>第一个 TextCode 必须定义 Y。</value></data>
+  <data name="EmptyTextDelta" xml:space="preserve"><value>文本位移为空。</value></data>
+  <data name="InvalidDeltaRepeat" xml:space="preserve"><value>位移重复次数无效。</value></data>
+  <data name="TextDeltaExpansion" xml:space="preserve"><value>文本位移展开后的数量超过其字符码点数量。</value></data>
+  <data name="ShortTextDeltas" xml:space="preserve"><value>长度不足的文本位移列表</value></data>
+  <data name="TrueTypeRequired" xml:space="preserve"><value>嵌入字体必须包含 TrueType 轮廓</value></data>
+  <data name="EmbeddedFontMissingGlyphs" xml:space="preserve"><value>嵌入的 OFD 字体缺少部分文本字形。</value></data>
+  <data name="FallbackFontReadFailed" xml:space="preserve"><value>无法读取桌面备用字体。</value></data>
+  <data name="FallbackFontLoadFailed" xml:space="preserve"><value>无法加载桌面备用字体。</value></data>
+  <data name="NoFontCoverage" xml:space="preserve"><value>没有可用的 OFD 字体能覆盖文本对象中的全部字符。</value></data>
+  <data name="FontLoadFailed" xml:space="preserve"><value>无法加载 OFD 字体。</value></data>
+  <data name="FontBudget" xml:space="preserve"><value>已加载字体超出 64 MiB 限额，或某个字体为空。</value></data>
+  <data name="PathFillRule" xml:space="preserve"><value>路径填充规则</value></data>
+  <data name="SubpathStart" xml:space="preserve"><value>子路径必须以 S 或 M 开始。</value></data>
+  <data name="MoveInOpenSubpath" xml:space="preserve"><value>未闭合子路径中的 M 命令</value></data>
+  <data name="InvalidArc" xml:space="preserve"><value>椭圆弧无效。</value></data>
+  <data name="PathCommand" xml:space="preserve"><value>路径命令 {0}</value></data>
+  <data name="EmptyPath" xml:space="preserve"><value>路径为空。</value></data>
+  <data name="LineCap" xml:space="preserve"><value>线端样式</value></data>
+  <data name="LineJoin" xml:space="preserve"><value>线条连接样式</value></data>
+  <data name="IncompletePathCommand" xml:space="preserve"><value>路径命令不完整。</value></data>
+  <data name="ImageDrawBudget" xml:space="preserve"><value>图像绘制超出 10,000 次操作的限额。</value></data>
+  <data name="ImageTypesSupported" xml:space="preserve"><value>仅支持 PNG 和 JPEG 图像</value></data>
+  <data name="TruncatedPngChunk" xml:space="preserve"><value>PNG 数据块被截断。</value></data>
+  <data name="InvalidPngChunkLength" xml:space="preserve"><value>PNG 数据块长度无效。</value></data>
+  <data name="AnimatedPng" xml:space="preserve"><value>PNG 动画图像</value></data>
+  <data name="InvalidImage" xml:space="preserve"><value>图像无效。</value></data>
+  <data name="ImagePixelLimit" xml:space="preserve"><value>图像超出五百万像素的限制。</value></data>
+  <data name="DecodedImageBudget" xml:space="preserve"><value>已解码图像超出一千六百万像素的限额。</value></data>
+  <data name="AnimatedImages" xml:space="preserve"><value>动画图像</value></data>
+  <data name="ExifOrientation" xml:space="preserve"><value>带有 EXIF 方向信息的图像</value></data>
+  <data name="ImageDecodeFailed" xml:space="preserve"><value>图像解码失败。</value></data>
+  <data name="ImageRetainFailed" xml:space="preserve"><value>无法保留图像。</value></data>
+  <data name="AssetReadBudget" xml:space="preserve"><value>累计资源读取量超出 256 MiB 限额。</value></data>
+  <data name="ColorComponentCount" xml:space="preserve"><value>颜色分量数量无效。</value></data>
+  <data name="UnknownResource" xml:space="preserve"><value>未知的 {0} 资源 {1}。</value></data>
+  <data name="ForeignXmlNamespace" xml:space="preserve"><value>外部 XML 命名空间</value></data>
+  <data name="UnexpectedText" xml:space="preserve"><value>{0} 中存在不应出现的文本。</value></data>
+  <data name="DuplicateElement" xml:space="preserve"><value>{0} 重复。</value></data>
+  <data name="MissingElement" xml:space="preserve"><value>缺少 {0}。</value></data>
+  <data name="EmptyElement" xml:space="preserve"><value>{0} 为空。</value></data>
+  <data name="MissingAttribute" xml:space="preserve"><value>缺少 {0}@{1}。</value></data>
+  <data name="InvalidId" xml:space="preserve"><value>OFD ID 无效。</value></data>
+  <data name="InvalidNumber" xml:space="preserve"><value>数值无效。</value></data>
+  <data name="CoordinateRange" xml:space="preserve"><value>坐标不是有限数值或超出支持的范围。</value></data>
+  <data name="PositiveDimension" xml:space="preserve"><value>尺寸必须为正数。</value></data>
+  <data name="CoordinateCount" xml:space="preserve"><value>坐标数量无效。</value></data>
+  <data name="ColorComponentRange" xml:space="preserve"><value>颜色或透明度分量必须是 0 到 255 之间的整数。</value></data>
+  <data name="InvalidBoolean" xml:space="preserve"><value>布尔值 {0} 无效。</value></data>
+  <data name="PositiveBoundary" xml:space="preserve"><value>边界尺寸必须为正数。</value></data>
+  <data name="BoundaryTooSmall" xml:space="preserve"><value>边界太小，无法表示。</value></data>
+  <data name="PhysicalPageLimit" xml:space="preserve"><value>物理页面超出 14,400 PDF 点的限制。</value></data>
+</root>

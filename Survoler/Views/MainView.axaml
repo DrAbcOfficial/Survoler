@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
               xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
               xmlns:vm="using:Survoler.ViewModels"
+              xmlns:resources="using:Survoler.Resources"
               xmlns:input="using:Avalonia.Input"
               xmlns:gestures="using:Avalonia.Input.GestureRecognizers"
               mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
@@ -34,7 +35,7 @@
                 Padding="12,8">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
                 <Button Grid.Column="0"
-                        Content="PREV"
+                        Content="{x:Static resources:Strings.Previous}"
                         Command="{Binding NavigatePreviousCommand}"
                         IsEnabled="{Binding CanNavigatePrevious}" />
                 <ComboBox Grid.Column="1"
@@ -52,7 +53,7 @@
                              Height="4"
                              VerticalAlignment="Center" />
                 <Button Grid.Column="4"
-                        Content="NEXT"
+                        Content="{x:Static resources:Strings.Next}"
                         Command="{Binding NavigateNextCommand}"
                         IsEnabled="{Binding CanNavigateNext}" />
                 <Button Grid.Column="5"

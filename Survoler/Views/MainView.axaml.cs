@@ -8,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using OfficeIMO.Pdf;
 using Survoler.ViewModels;
+using Survoler.Resources;
 
 namespace Survoler.Views;
 
@@ -196,7 +197,7 @@ public partial class MainView : UserControl
 
         _suppressViewModeUpdate = true;
         _viewModel.IsFitToView = false;
-        _viewModel.FitButtonText = "FIT";
+        _viewModel.FitButtonText = Strings.Fit;
         _suppressViewModeUpdate = false;
     }
 

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using OfficeIMO.Pdf;
+using Survoler.Resources;
 
 namespace Survoler.Rendering;
 
@@ -31,7 +32,7 @@ public sealed class PdfDocumentPreview : IDocumentPreview
         _document = document;
         _pdfBytes = new Lazy<byte[]>(() => File.ReadAllBytes(document.Path));
         _navigationItems = Enumerable.Range(1, renderer.PageCount)
-            .Select(index => $"Page {index}")
+            .Select(index => Strings.Format("Page", index))
             .ToArray();
     }
 
