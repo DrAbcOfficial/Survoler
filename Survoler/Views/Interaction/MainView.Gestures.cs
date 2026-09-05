@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Input;
 
@@ -11,68 +12,74 @@ public partial class MainView
     private const double PanStartDistance = 8;
 
     private readonly Dictionary<int, IPointer> _contacts = new();
+    private readonly Dictionary<int, Point> _contactPositions = new();
     private readonly Dictionary<int, Vector> _swipeTotals = new();
     private IPointer? _activePointer;
     private Point _pressPosition;
     private Point _lastPointerPosition;
     private double _pinchStartScale;
-    private double _pinchStartTranslateX;
-    private double _pinchStartTranslateY;
+    private double _pinchStartDistance;
     private Point _pinchPageOrigin;
     private bool _pinching;
     private bool _panning;
+    private bool _hadMultipleContacts;
 
-    private void OnPinch(object? sender, PinchEventArgs args)
+    private void BeginPinch()
     {
-        if (_pageWidth <= 0 || _pageHeight <= 0)
+        _pinching = true;
+        _hadMultipleContacts = true;
+        CancelPan();
+        ClearSelection();
+        _activePointer = null;
+        _swipeTotals.Clear();
+        Point[] pair = _contactPositions.Values.Take(2).ToArray();
+        _pinchStartDistance = ((Vector)(pair[1] - pair[0])).Length;
+        Point origin = new((pair[0].X + pair[1].X) / 2, (pair[0].Y + pair[1].Y) / 2);
+        _pinchStartScale = _scale;
+        _pinchPageOrigin = new Point(
+            (origin.X - _translateX) / _scale,
+            (origin.Y - _translateY) / _scale);
+    }
+
+    private void UpdatePinch()
+    {
+        if (_pinchStartDistance <= 0)
         {
+            BeginPinch();
             return;
         }
 
-        if (!_pinching)
-        {
-            _pinching = true;
-            CancelPan();
-            ClearSelection();
-            _pinchStartScale = _scale;
-            _pinchStartTranslateX = _translateX;
-            _pinchStartTranslateY = _translateY;
-            _pinchPageOrigin = new Point(
-                (args.ScaleOrigin.X - _pinchStartTranslateX) / _pinchStartScale,
-                (args.ScaleOrigin.Y - _pinchStartTranslateY) / _pinchStartScale);
-        }
-
+        Point[] pair = _contactPositions.Values.Take(2).ToArray();
+        Point origin = new((pair[0].X + pair[1].X) / 2, (pair[0].Y + pair[1].Y) / 2);
         double minimumScale = Math.Max(0.1, Math.Min(_fitScale, 1) * 0.75);
-        _scale = Math.Clamp(_pinchStartScale * args.Scale, minimumScale, MaximumScale);
-        _translateX = args.ScaleOrigin.X - _pinchPageOrigin.X * _scale;
-        _translateY = args.ScaleOrigin.Y - _pinchPageOrigin.Y * _scale;
+        _scale = Math.Clamp(_pinchStartScale * ((Vector)(pair[1] - pair[0])).Length / _pinchStartDistance,
+            minimumScale, MaximumScale);
+        _translateX = origin.X - _pinchPageOrigin.X * _scale;
+        _translateY = origin.Y - _pinchPageOrigin.Y * _scale;
         SetCustomViewMode();
         ClampTranslation();
         ApplyTransform();
-        args.Handled = true;
-    }
-
-    private void OnPinchEnded(object? sender, PinchEndedEventArgs args)
-    {
-        if (!_pinching)
-        {
-            return;
-        }
-
-        _pinching = false;
-        ClampTranslation();
-        ApplyTransform();
-        args.Handled = true;
     }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
     {
+        if (_pageWidth <= 0 || _pageHeight <= 0 ||
+            (args.Pointer.Type != PointerType.Touch &&
+             !args.GetCurrentPoint(PreviewViewport).Properties.IsLeftButtonPressed))
+        {
+            return;
+        }
         Point position = args.GetPosition(PreviewViewport);
         _contacts[args.Pointer.Id] = args.Pointer;
+        _contactPositions[args.Pointer.Id] = position;
+        args.Pointer.Capture(PreviewViewport);
         if (_contacts.Count > 1)
         {
-            CancelPan();
-            ClearSelection();
+            if (_contacts.Count == 2)
+            {
+                BeginPinch();
+            }
+            args.PreventGestureRecognition();
             return;
         }
 
@@ -88,6 +95,22 @@ public partial class MainView
     private void OnPointerMoved(object? sender, PointerEventArgs args)
     {
         Point position = args.GetPosition(PreviewViewport);
+        if (!_contacts.ContainsKey(args.Pointer.Id))
+        {
+            return;
+        }
+        _contactPositions[args.Pointer.Id] = position;
+        if (_hadMultipleContacts || IsZoomedForPanning())
+        {
+            args.PreventGestureRecognition();
+        }
+        if (_pinching)
+        {
+            UpdatePinch();
+            args.PreventGestureRecognition();
+            args.Handled = true;
+            return;
+        }
         if (args.Pointer == _selectionPointer && _selecting)
         {
             UpdateSelection(position);
@@ -125,37 +148,72 @@ public partial class MainView
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs args)
     {
-        _contacts.Remove(args.Pointer.Id);
         if (args.Pointer == _selectionPointer)
         {
             UpdateSelection(args.GetPosition(PreviewViewport));
             _selectionPointer = null;
             _selecting = false;
-            args.Pointer.Capture(null);
             ShowSelectionMenu();
             UpdateSwipeAvailability();
             args.Handled = true;
         }
-        else if (args.Pointer == _activePointer)
-        {
-            CancelPan();
-            _activePointer = null;
-        }
+        RemoveContact(args.Pointer);
+        args.Pointer.Capture(null);
     }
 
     private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs args)
     {
-        _contacts.Remove(args.Pointer.Id);
         if (args.Pointer == _selectionPointer)
         {
             _selectionPointer = null;
             _selecting = false;
             ShowSelectionMenu();
         }
-        if (args.Pointer == _activePointer)
+        RemoveContact(args.Pointer);
+    }
+
+    private void RemoveContact(IPointer pointer)
+    {
+        if (!_contacts.Remove(pointer.Id))
         {
-            _activePointer = null;
-            _panning = false;
+            return;
+        }
+        _contactPositions.Remove(pointer.Id);
+        _pinching = false;
+        _panning = false;
+        _activePointer = null;
+        if (_contacts.Count >= 2)
+        {
+            BeginPinch();
+        }
+        else if (_contacts.Count == 1)
+        {
+            _activePointer = _contacts.Values.First();
+            _pressPosition = _lastPointerPosition = _contactPositions[_activePointer.Id];
+        }
+        else
+        {
+            _hadMultipleContacts = false;
+        }
+        ClampTranslation();
+        ApplyTransform();
+    }
+
+    private void CancelAllContacts()
+    {
+        IPointer[] pointers = _contacts.Values.ToArray();
+        // Clear state before releasing capture, which synchronously raises CaptureLost.
+        _contacts.Clear();
+        _contactPositions.Clear();
+        _swipeTotals.Clear();
+        _activePointer = null;
+        _pinching = false;
+        _panning = false;
+        _hadMultipleContacts = false;
+        ClearSelection();
+        foreach (IPointer pointer in pointers)
+        {
+            pointer.Capture(null);
         }
         UpdateSwipeAvailability();
     }
@@ -210,17 +268,13 @@ public partial class MainView
 
     private void CancelPan()
     {
-        if (_panning)
-        {
-            _activePointer?.Capture(null);
-        }
         _panning = false;
         UpdateSwipeAvailability();
     }
 
     private void UpdateSwipeAvailability()
     {
-        PageSwipeRecognizer.IsEnabled = !_pinching && !_panning && !_selecting &&
+        PageSwipeRecognizer.IsEnabled = !_hadMultipleContacts && !_pinching && !_panning && !_selecting &&
             !IsZoomedForPanning();
     }
 }

@@ -6,8 +6,8 @@
     <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
     <Nullable>enable</Nullable>
     <ApplicationId>net.drabc.survoler</ApplicationId>
-    <ApplicationVersion>1</ApplicationVersion>
-    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationDisplayVersion>$(VersionPrefix)</ApplicationDisplayVersion>
+    <ApplicationVersion Condition="'$(_SurvolerVersionValid)' == 'True'">$([MSBuild]::Add($([MSBuild]::Add($([MSBuild]::Multiply($([System.Version]::Parse('$(VersionPrefix)').Major), 1000000)), $([MSBuild]::Multiply($([System.Version]::Parse('$(VersionPrefix)').Minor), 1000)))), $([MSBuild]::Add($([System.Version]::Parse('$(VersionPrefix)').Build), 1))))</ApplicationVersion>
     <AndroidPackageFormats>apk</AndroidPackageFormats>
     <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
     <TrimMode Condition="'$(Configuration)' == 'Release'">full</TrimMode>

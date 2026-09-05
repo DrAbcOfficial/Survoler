@@ -1,6 +1,8 @@
 using System;
 using System.ComponentModel;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Survoler.ViewModels;
 
 namespace Survoler.Views;
@@ -13,8 +15,12 @@ public partial class MainView : UserControl
     {
         InitializeComponent();
         PageLayer.RenderTransform = _pageTransform;
+        // Run before the viewport's bubbling gesture recognizers can capture a contact.
+        PreviewViewport.AddHandler(InputElement.PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel);
+        PreviewViewport.AddHandler(InputElement.PointerMovedEvent, OnPointerMoved, RoutingStrategies.Tunnel);
+        PreviewViewport.AddHandler(InputElement.PointerReleasedEvent, OnPointerReleased, RoutingStrategies.Tunnel);
         DataContextChanged += OnDataContextChanged;
-        DetachedFromVisualTree += (_, _) => ClearSelection();
+        DetachedFromVisualTree += (_, _) => CancelAllContacts();
     }
 
     private void OnDataContextChanged(object? sender, EventArgs args)

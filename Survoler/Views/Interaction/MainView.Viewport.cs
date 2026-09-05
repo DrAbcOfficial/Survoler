@@ -34,7 +34,7 @@ public partial class MainView
 
     private void UpdatePageGeometry()
     {
-        ClearSelection();
+        CancelAllContacts();
         if (_viewModel?.PreviewImage is not { } image)
         {
             _pageWidth = 0;

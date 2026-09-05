@@ -29,6 +29,17 @@ if (-not (Test-Path -LiteralPath $apkPath)) {
 }
 
 $manifest = [System.IO.File]::ReadAllText($manifestPath)
+$versionOutput = & dotnet msbuild $project -nologo -t:ValidateVersion "-p:Configuration=$Configuration" -getProperty:ApplicationDisplayVersion,ApplicationVersion
+if ($LASTEXITCODE -ne 0) {
+    throw "Application version evaluation failed."
+}
+$version = ($versionOutput -join "`n" | ConvertFrom-Json).Properties
+$manifestXml = [xml]$manifest
+$androidNamespace = "http://schemas.android.com/apk/res/android"
+if ($manifestXml.manifest.GetAttribute("versionName", $androidNamespace) -cne $version.ApplicationDisplayVersion -or
+    $manifestXml.manifest.GetAttribute("versionCode", $androidNamespace) -cne $version.ApplicationVersion) {
+    throw "Merged manifest version does not match the configured release version."
+}
 $forbiddenManifestValues = @(
     "android.intent.action.MAIN",
     "android.intent.category.LAUNCHER",
@@ -114,6 +125,7 @@ finally {
 $apkSizeMiB = [Math]::Round((Get-Item -LiteralPath $apkPath).Length / 1MB, 2)
 "Verified: $apkPath"
 "APK size: $apkSizeMiB MiB"
+"Version: $($version.ApplicationDisplayVersion) ($($version.ApplicationVersion))"
 "ABI: arm64-v8a only"
 "Launcher: absent"
 "Office MIME filters: present"

@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <VersionPrefix Condition="'$(ReleaseVersion)' != ''">$(ReleaseVersion)</VersionPrefix>
+    <VersionPrefix Condition="'$(VersionPrefix)' == ''">0.0.2</VersionPrefix>
+    <!-- Canonical X.Y.Z: major 0..2099, minor/patch 0..999, no leading zeros.
+         Android code = major * 1000000 + minor * 1000 + patch + 1 (1..2100000000).
+         Leave AssemblyVersion to the SDK so every project uses this prefix. -->
+    <_SurvolerVersionValid>$([System.Text.RegularExpressions.Regex]::IsMatch('$(VersionPrefix)', '\A(0|[1-9][0-9]{0,2}|1[0-9]{3}|20[0-9]{2})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})\z'))</_SurvolerVersionValid>
+  </PropertyGroup>
+
+  <Target Name="ValidateVersion" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(_SurvolerVersionValid)' != 'True'"
+           Text="Invalid version '$(VersionPrefix)'. Use canonical X.Y.Z with no leading zeros; major must be 0..2099 and minor/patch 0..999. Set ReleaseVersion for a release or update the default VersionPrefix in Directory.Build.props." />
+  </Target>
+</Project>

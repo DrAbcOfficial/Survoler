@@ -91,17 +91,11 @@
                   ClipToBounds="True"
                   input:InputElement.IsHoldingEnabled="True"
                   Holding="OnHolding"
-                  PointerPressed="OnPointerPressed"
-                  PointerMoved="OnPointerMoved"
-                  PointerReleased="OnPointerReleased"
                   PointerCaptureLost="OnPointerCaptureLost"
-                  Pinch="OnPinch"
-                  PinchEnded="OnPinchEnded"
                   SwipeGesture="OnSwipeGesture"
                   SwipeGestureEnded="OnSwipeGestureEnded"
                   SizeChanged="OnViewportSizeChanged">
                 <Grid.GestureRecognizers>
-                    <input:PinchGestureRecognizer />
                     <gestures:SwipeGestureRecognizer x:Name="PageSwipeRecognizer"
                                                      CanHorizontallySwipe="False"
                                                      CanVerticallySwipe="True"

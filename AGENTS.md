@@ -25,6 +25,7 @@ Keep README.md concise; document detailed compatibility limits in FORMAT_SUPPORT
 - `Survoler.Tests/`: feature-grouped MSTest tests; `Support/` contains shared test
   helpers and `TestData/` contains document fixtures.
 - `Directory.Packages.props`: centrally managed package versions.
+- `Directory.Build.props`: default app/assembly version; tag builds override it with `ReleaseVersion`.
 - `build/Verify-AndroidPackage.ps1`: Release package, manifest and ABI checks.
 
 Keep the pipeline unified: source format -> PDF -> existing PDF preview UI.
@@ -61,6 +62,7 @@ Use the SDK pinned in `global.json`. Android builds also require the matching
 
 ```powershell
 dotnet test Survoler.Tests/Survoler.Tests.csproj
+& "./build/Verify-Version.ps1"
 dotnet build Survoler.Android/Survoler.Android.csproj
 & "./build/Verify-AndroidPackage.ps1" -Configuration Release
 git diff --check
@@ -75,3 +77,13 @@ fidelity. Report device-testing gaps and unsupported features explicitly.
 
 For documentation-only changes, check paths, supported-format claims and the diff;
 application builds are not normally necessary.
+
+## Versioning
+
+For a local version bump, change only the default `VersionPrefix` in
+`Directory.Build.props`. CI builds of `vX.Y.Z` tags use `X.Y.Z` via
+`ReleaseVersion`, so the APK display version matches the release tag without
+requiring Git history during compilation. The Android version code is
+`major * 1000000 + minor * 1000 + patch + 1`; major is limited to 0..2099 and
+minor/patch to 0..999. Use canonical numeric versions without leading zeros or
+prerelease suffixes. Never move an existing release tag without explicit approval.

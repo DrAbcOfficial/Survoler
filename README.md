@@ -19,4 +19,4 @@ Some formats support only compatible content or static previews. Macros and add-
 
 ## Usage
 
-Requires an ARM64 device running Android 6.0 or later. Select Survoler from your file manager's **Open With** menu to preview, navigate pages, zoom and copy extractable text. The app has no launcher entry.
+Requires an ARM64 device running Android 6.0 or later. Select Survoler from your file manager's **Open With** menu to preview, navigate pages, pinch to zoom, drag with one finger while zoomed, and copy extractable text. The app has no launcher entry.

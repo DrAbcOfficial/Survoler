@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="MSTest" />
+    <PackageReference Include="Avalonia.Headless" PrivateAssets="all" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" PrivateAssets="all" />
   </ItemGroup>
 

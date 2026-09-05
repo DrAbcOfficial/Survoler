@@ -5,13 +5,14 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using OfficeIMO.Pdf;
 
 namespace Survoler.Views;
 
 public partial class MainView
 {
-    private static readonly SolidColorBrush SelectionBrush = new(
+    private static readonly ImmutableSolidColorBrush SelectionBrush = new(
         Color.FromArgb(96, 27, 135, 255));
 
     private IPointer? _selectionPointer;
@@ -200,7 +201,10 @@ public partial class MainView
     {
         IPointer? pointer = _selectionPointer;
         _selectionPointer = null;
-        pointer?.Capture(null);
+        if (pointer is not null && !_contacts.ContainsKey(pointer.Id))
+        {
+            pointer.Capture(null);
+        }
         _selectionStartIndex = -1;
         _selectionEndIndex = -1;
         _selectedText = string.Empty;
