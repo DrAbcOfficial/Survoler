@@ -16,6 +16,7 @@ namespace Survoler.Android
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
             App.WebViewPlatformPolicy = new AndroidWebViewPlatformPolicy();
+            App.PdfPageRendererFactory = new AndroidPdfPageRendererFactory();
             return base.CustomizeAppBuilder(builder);
         }
     }

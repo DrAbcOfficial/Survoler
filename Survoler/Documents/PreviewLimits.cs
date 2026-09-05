@@ -18,6 +18,9 @@ public static class PreviewLimits
     public const int MaxSpreadsheetMergedRanges = 5_000;
     public const int MaxSlideWidth = 1_920;
     public const int MaxSlideHeight = 1_080;
+    public const int MaxPdfPages = 2_000;
+    public const int MaxPdfPageWidth = 2_048;
+    public const long MaxPdfPagePixels = 5_000_000;
 
     public static OfficePackageSecurityOptions CreatePackageSecurity() => new()
     {

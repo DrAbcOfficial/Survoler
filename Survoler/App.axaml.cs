@@ -20,6 +20,8 @@ public partial class App : Application
 
     public static IWebViewPlatformPolicy? WebViewPlatformPolicy { get; set; }
 
+    public static IPdfPageRendererFactory? PdfPageRendererFactory { get; set; }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
