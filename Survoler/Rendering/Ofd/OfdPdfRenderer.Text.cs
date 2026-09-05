@@ -46,7 +46,7 @@ internal sealed partial class OfdPdfRenderer
             Rune[] runes = text.EnumerateRunes().ToArray();
             if (code.Attribute("DeltaX") is null && code.Attribute("DeltaY") is null)
             {
-                canvas.DrawText(text, x, y, SKTextAlign.Left, font, paint);
+                OfdPdfText.Draw(canvas, text, x, y, font, paint);
                 int lastLength = runes[^1].Utf16SequenceLength;
                 previousX = Finite(x + font.MeasureText(text[..^lastLength], paint));
                 previousY = y;
@@ -58,7 +58,7 @@ internal sealed partial class OfdPdfRenderer
             {
                 _token.ThrowIfCancellationRequested();
                 string glyph = runes[i].ToString();
-                canvas.DrawText(glyph, x, y, SKTextAlign.Left, font, paint);
+                OfdPdfText.Draw(canvas, glyph, x, y, font, paint);
                 if (i + 1 == runes.Length) break;
                 x = Finite(x + (dx.Length == 0 ? 0 : dx[i]));
                 y = Finite(y + (dy.Length == 0 ? 0 : dy[i]));

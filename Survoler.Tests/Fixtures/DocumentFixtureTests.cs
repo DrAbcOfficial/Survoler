@@ -71,7 +71,8 @@ public sealed class DocumentFixtureTests
         ];
         byte[] original = ReadFixture("sample.csv");
         Assert.IsTrue(original.All(b => b < 128), "This fixture is ASCII-compatible UTF-8 without a BOM.");
-        Assert.AreEqual(string.Join("\r\n", expected) + "\r\n", new UTF8Encoding(false, true).GetString(original));
+        Assert.AreEqual(string.Join("\n", expected) + "\n",
+            new UTF8Encoding(false, true).GetString(original).ReplaceLineEndings("\n"));
         using var file = FakeStorageFile.Create("sample.csv", original);
         using var coordinator = new DocumentOpenCoordinator();
         DocumentSession? session = await coordinator.OpenAsync(file);

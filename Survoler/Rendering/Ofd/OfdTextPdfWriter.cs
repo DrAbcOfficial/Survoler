@@ -88,7 +88,7 @@ internal static class OfdTextPdfWriter
             void FlushRun()
             {
                 if (run.Length == 0) return;
-                canvas!.DrawText(run.ToString(), runX, y, SKTextAlign.Left, runFont!, paint);
+                OfdPdfText.Draw(canvas!, run.ToString(), runX, y, runFont!, paint);
                 run.Clear();
             }
 

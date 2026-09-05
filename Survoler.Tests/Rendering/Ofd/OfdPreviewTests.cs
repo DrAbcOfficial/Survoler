@@ -76,7 +76,9 @@ public sealed class OfdPreviewTests
                 void Extract(int i)
                 {
                     byte[] bytes = File.ReadAllBytes(converted[i]!.Path);
-                    string plain = PdfReadDocument.Open(converted[i]!.Path).ExtractText().Trim();
+                    // Text-run segmentation and inferred spaces depend on the platform font.
+                    string plain = string.Concat(PdfReadDocument.Open(converted[i]!.Path).Pages[0]
+                        .GetTextSpans().Select(span => span.Text));
                     string mapped = string.Concat(PdfPageInteractionMap.Create(bytes, 1).TextRegions.Select(r => r.Text));
                     if (plain != texts[i] || mapped != texts[i])
                     {
@@ -193,8 +195,8 @@ public sealed class OfdPreviewTests
         using DocumentSession session = Session(Zip(parts));
         using ConvertedPdfDocument converted = await new OfficePdfConverter().ConvertAsync(session, CancellationToken.None);
         var spans = PdfReadDocument.Open(converted.Path).Pages[0].GetTextSpans();
-        CollectionAssert.AreEqual(overrideOrder ? new[] { "Front", "Body", "Back", "Top" } : new[] { "Back", "Body", "Front", "Top" },
-            spans.Select(s => s.Text).ToArray());
+        Assert.AreEqual(overrideOrder ? "FrontBodyBackTop" : "BackBodyFrontTop",
+            string.Concat(spans.Select(s => s.Text)));
     }
 
     [TestMethod]
@@ -250,10 +252,10 @@ public sealed class OfdPreviewTests
             var (width, height) = pdf.Pages[i].GetPageSize();
             Assert.AreEqual(Math.Round(widths[i] * Pt), width, 0.02);
             Assert.AreEqual(Math.Round(heights[i] * Pt), height, 0.02);
-            var span = pdf.Pages[i].GetTextSpans().Single();
-            Assert.AreEqual(texts[i], span.Text);
-            Assert.AreEqual(x[i] * Pt, span.X, 0.03);
-            Assert.AreEqual(height - y[i] * Pt, span.Y, 0.03);
+            var spans = pdf.Pages[i].GetTextSpans().ToArray();
+            Assert.AreEqual(texts[i], string.Concat(spans.Select(span => span.Text)));
+            Assert.AreEqual(x[i] * Pt, spans[0].X, 0.03);
+            foreach (var span in spans) Assert.AreEqual(height - y[i] * Pt, span.Y, 0.03);
             var map = PdfPageInteractionMap.Create(File.ReadAllBytes(converted.Path), i + 1);
             Assert.AreEqual(texts[i], string.Concat(map.TextRegions.Select(r => r.Text)));
         }
@@ -314,7 +316,8 @@ public sealed class OfdPreviewTests
     [DataRow(true)]
     public async Task RepeatedEmbeddedFontReferencesShareUnicodeMap(bool chinese)
     {
-        string text = chinese ? "\u4E2D\u6587" : "AlphaBeta";
+        // Noto CJK maps U+6587 and U+2F42 to the same glyph: preserve their distinct source text.
+        string text = chinese ? "\u4E2D\u6587\u2F42\u6587" : "AlphaBeta";
         using SKTypeface? face = chinese ? SKFontManager.Default.MatchCharacter('\u4E2D') : SKTypeface.FromFamilyName(SKTypeface.Default.FamilyName);
         if (face is null) Assert.Inconclusive("No installed font covers the requested characters.");
         using SKStreamAsset stream = face.OpenStream();
