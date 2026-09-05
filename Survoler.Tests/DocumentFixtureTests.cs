@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.IO.Compression;
-using System.Resources;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using DocumentFormat.OpenXml.Packaging;
@@ -211,9 +211,10 @@ public sealed class DocumentFixtureTests
     }
 
     [TestMethod]
-    public async Task OfdFixtureContainsTwoChinesePagesButRejectsDocInfoCustomDatasExplicitly()
+    public async Task OfdFixtureConvertsBothChinesePagesToSelectableTextOnlyPdf()
     {
         byte[] original = ReadFixture("sample.ofd");
+        var englishMarkers = new HashSet<string>(StringComparer.Ordinal);
         using (var zip = new ZipArchive(new MemoryStream(original), ZipArchiveMode.Read))
         {
             XNamespace ns = "http://www.ofdspec.org/2016";
@@ -226,7 +227,10 @@ public sealed class DocumentFixtureTests
             for (int page = 0; page < 2; page++)
             {
                 XDocument content = ReadXml(zip, $"Doc_0/Pages/Page_{page}/Content.xml");
-                StringAssert.Contains(string.Concat(content.Descendants(ns + "TextCode").Select(e => e.Value)), Title);
+                string sourceText = string.Concat(content.Descendants(ns + "TextObject")
+                    .Elements(ns + "TextCode").Select(e => e.Value));
+                StringAssert.Contains(sourceText, Title);
+                foreach (Match marker in Regex.Matches(sourceText, "[A-Za-z]{4,}")) englishMarkers.Add(marker.Value);
                 Assert.IsTrue(content.Descendants(ns + "CGTransform").Any());
                 if (page == 1)
                 {
@@ -239,25 +243,25 @@ public sealed class DocumentFixtureTests
         using var coordinator = new DocumentOpenCoordinator();
         DocumentSession? session = await coordinator.OpenAsync(file);
         Assert.IsNotNull(session);
-        DocumentOpenException error = await Assert.ThrowsExactlyAsync<DocumentOpenException>(async () =>
-        {
-            using var unexpected = await new OfficePdfConverter().ConvertAsync(session, CancellationToken.None);
-        });
-        var resources = new ResourceManager("Survoler.Resources.OfdStrings", typeof(Strings).Assembly);
-        try
-        {
-            string? format = resources.GetString("UnsupportedPrefix", CultureInfo.CurrentUICulture);
-            Assert.IsNotNull(format);
-            Assert.AreEqual(string.Format(CultureInfo.CurrentUICulture, format,
-                "DocInfo/{http://www.ofdspec.org/2016}CustomDatas"), error.Message);
-        }
-        finally
-        {
-            resources.ReleaseAllResources();
-        }
+        Assert.IsGreaterThan(0, englishMarkers.Count);
+        using ConvertedPdfDocument converted = await new OfficePdfConverter().ConvertAsync(session, CancellationToken.None);
+        OfdTextPreviewTests.AssertTextOnly(converted, [Title, .. englishMarkers]);
+        PdfReadDocument pdf = PdfReadDocument.Open(converted.Path);
+        Assert.IsGreaterThanOrEqualTo(2, pdf.Pages.Count, "Two original pages may reflow to more PDF pages.");
+        Assert.IsGreaterThanOrEqualTo(2, Regex.Matches(Regex.Replace(pdf.ExtractText(), @"\s", ""), Title).Count);
+        byte[] output = File.ReadAllBytes(converted.Path);
+        using IDocumentPreview preview = new PdfDocumentPreview(new OfdTextPreviewTests.UnusedRenderer(), converted);
+        Assert.AreEqual(converted.Warning, preview.Warning);
         CollectionAssert.AreEqual(original, File.ReadAllBytes(session.LocalPath));
         coordinator.Dispose();
         Assert.IsFalse(File.Exists(session.LocalPath));
+        CollectionAssert.AreEqual(output, File.ReadAllBytes(converted.Path));
+        converted.Dispose();
+        Assert.IsFalse(File.Exists(converted.Path));
+        await using Stream source = await file.OpenReadAsync();
+        using var copy = new MemoryStream();
+        await source.CopyToAsync(copy);
+        CollectionAssert.AreEqual(original, copy.ToArray());
         CollectionAssert.AreEqual(original, ReadFixture("sample.ofd"));
     }
 

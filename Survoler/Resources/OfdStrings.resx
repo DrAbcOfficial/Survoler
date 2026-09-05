@@ -5,6 +5,8 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
   <data name="InvalidPrefix" xml:space="preserve"><value>Invalid OFD: {0}</value></data>
+  <data name="TextOnlyPreviewWarning" xml:space="preserve"><value>Text-only OFD preview: original layout, images, graphics, seals and annotations are omitted. Text order may differ and some text may be unavailable. Digital signatures have not been verified.</value></data>
+  <data name="TextOnlyPreviewTitle" xml:space="preserve"><value>OFD text-only preview (not the original layout)</value></data>
   <data name="UnsupportedPrefix" xml:space="preserve"><value>Unsupported OFD feature: {0}.</value></data>
   <data name="InvalidOfdXml" xml:space="preserve"><value>Invalid OFD XML: DTDs and malformed XML are not supported.</value></data>
   <data name="InvalidOfdPackage" xml:space="preserve"><value>Invalid OFD: The package is invalid or uses unsupported ZIP features.</value></data>

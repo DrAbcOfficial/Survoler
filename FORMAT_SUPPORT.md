@@ -41,13 +41,15 @@ Signature/seal and annotation appearances will be absent. Ordinary page-body
 images (including a seal already flattened into a body image) are not removed.
 ZIP-level limits and the main XML safety checks still apply to the package.
 
-Other unsupported content fails explicitly and deletes the incomplete PDF;
-there is no image-only fallback that silently removes text or vector objects:
+Rich page conversion does not support the following features. When its own
+unsupported-feature check fails, Survoler may instead create the explicitly
+labeled text-only preview described below. Invalid input/security-limit errors
+do not activate this fallback. There is no image-only fallback that silently
+removes text or vector objects:
 
-- Attachments, encryption, and multiple DocBody documents. A signed OFD can now
-  preview its supported body, but skipping overlays does not enable unsupported
-  body graphics or other document features. Showing or validating independent
-  electronic seals is not claimed.
+- Attachment rendering, encryption, and multiple DocBody documents. Encryption
+  and multiple DocBody documents are not supported by text-only mode either.
+  Showing or validating independent electronic seals is not claimed.
 - CGTransform glyph mappings, composite objects, DrawParam resources/inheritance,
   gradients/patterns, arbitrary Clips, stroked text, unimplemented writing/shaping
   attributes and non-default image EXIF orientation.
@@ -57,6 +59,34 @@ there is no image-only fallback that silently removes text or vector objects:
   inter-character displacement; lists with one trailing displacement are allowed.
 - Unknown XML visual elements/attributes are rejected rather than discarded.
   Compatibility with arbitrary producer-specific metadata is not guaranteed.
+
+### Text-Only Fallback
+
+For otherwise readable single-document OFD packages with unsupported layout or
+graphics, text-only mode extracts Unicode from body TextCode elements and
+supported template/PageBlock content. It reflows the text onto A4 pages using
+12-point text, preserves source-page boundaries, and adds pages as needed. A
+visible heading and persistent localized warning identify the result as text-only,
+not the original layout. Selection/copy still uses the resulting PDF text map.
+
+This mode deliberately omits images, paths, glyph substitutions, clipping,
+annotations, attachments and seals. It does not promise original reading order,
+complete extraction or accurate complex-script shaping. Hidden objects are not
+extracted, nor are TextCode values inside clip masks or glyph-transform metadata.
+Embedded subset fonts are not reused for reflow; registered Android fallback
+fonts (or independently loaded desktop system fonts in tests) must cover the
+extractable Unicode. Glyph-only/image-only content without usable body text
+does not produce a pretend readable preview.
+
+The same package path, ZIP, DTD, XML and text budgets apply. Referenced resource
+XML and resource paths are validated even though assets are not decoded. The
+failed rich PDF is removed before creating a separate text-only document. Both
+the source-page count and generated-page count are limited to 2,000; font and
+PDF output limits remain unchanged.
+
+The supplied `sample.ofd` now has regression coverage for successful text-only
+Chinese/English reading and selectable text, instead of an expected CustomDatas
+rejection. This demonstrates minimum text access, not faithful OFD rendering.
 
 Safety budgets:
 
@@ -77,7 +107,9 @@ Safety budgets:
 positions, transforms, path geometry, page sizes/origins, template order,
 embedded/registered fonts, Unicode, image reuse, independent temporary-file
 ownership, rejection limits, skipped overlay references/warning propagation and
-concurrent PDF generation. These are not a
+concurrent PDF generation. `OfdTextPreviewTests` additionally covers Unicode
+reflow, wrapping, visibility, fallback warnings, safety failures and concurrent
+text-only conversion. These are not a
 reference-image conformance suite or Android device tests; real signed/complex
 OFD documents require further feature work and corpus validation.
 

@@ -442,7 +442,7 @@ public sealed class OfdPreviewTests
     [DataRow("xml-depth", "XML complexity limit")]
     [DataRow("xml-nodes", "XML node budget")]
     [DataRow("template-cycle", "Cyclic template reference")]
-    public async Task RejectsUnsupportedOrUnsafePackagesWithoutChangingInput(string scenario, string message)
+    public async Task UnsupportedTextFallsBackButUnsafePackagesRemainRejectedWithoutChangingInput(string scenario, string message)
     {
         var parts = Parts(Text);
         string page = Xml(parts, "Doc/Page.xml"), document = Xml(parts, "Doc/Document.xml"), ofd = Xml(parts, "OFD.xml");
@@ -451,7 +451,7 @@ public sealed class OfdPreviewTests
             case "clips": page = page.Replace("<TextCode", "<Clips/><TextCode"); break;
             case "glyphs": page = page.Replace("<TextCode", "<CGTransform/><TextCode"); break;
             case "composite": page = page.Replace(Text, "<CompositeObject ID='10' Boundary='0 0 10 10' ResourceID='3'/>"); break;
-            case "drawparams": Set(parts, "Doc/Res.xml", $"<Res xmlns='{Ns}'><DrawParams><DrawParam ID='3'/></DrawParams></Res>"); break;
+            case "drawparams": Set(parts, "Doc/Res.xml", Xml(parts, "Doc/Res.xml").Replace("</Res>", "<DrawParams><DrawParam ID='3'/></DrawParams></Res>")); break;
             case "gradient": page = page.Replace("<TextCode", "<FillColor><AxialShd/></FillColor><TextCode"); break;
             case "multidoc": ofd = ofd.Replace("</OFD>", "<DocBody><DocRoot>Doc/Document.xml</DocRoot></DocBody></OFD>"); break;
             case "missing-resource": parts.RemoveAll(p => p.Name == "Doc/Res.xml"); break;
@@ -484,9 +484,17 @@ public sealed class OfdPreviewTests
         if (scenario == "missing-manifest") parts.RemoveAll(p => p.Name == "OFD.xml");
         byte[] bytes = Zip(parts, scenario == "zip-ratio" ? CompressionLevel.SmallestSize : CompressionLevel.NoCompression);
         using DocumentSession session = Session(bytes);
-        DocumentOpenException exception = await Assert.ThrowsExactlyAsync<DocumentOpenException>(
-            async () => { using var unexpected = await new OfficePdfConverter().ConvertAsync(session, CancellationToken.None); });
-        StringAssert.Contains(exception.Message, message);
+        if (scenario is "clips" or "glyphs" or "drawparams" or "gradient" or "short-delta")
+        {
+            using ConvertedPdfDocument converted = await new OfficePdfConverter().ConvertAsync(session, CancellationToken.None);
+            OfdTextPreviewTests.AssertTextOnly(converted, "ABCD");
+        }
+        else
+        {
+            DocumentOpenException exception = await Assert.ThrowsExactlyAsync<DocumentOpenException>(
+                async () => { using var unexpected = await new OfficePdfConverter().ConvertAsync(session, CancellationToken.None); });
+            StringAssert.Contains(exception.Message, message);
+        }
         CollectionAssert.AreEqual(bytes, File.ReadAllBytes(session.LocalPath));
         using var exclusive = new FileStream(session.LocalPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
     }
@@ -576,10 +584,13 @@ public sealed class OfdPreviewTests
         var parts = Parts(Text.Replace("<TextCode", "<Clips/><TextCode"));
         Set(parts, "OFD.xml", Xml(parts, "OFD.xml").Replace("</DocBody>",
             "<Signatures>Missing.xml</Signatures></DocBody>"));
-        using DocumentSession session = Session(Zip(parts));
-        DocumentOpenException error = await Assert.ThrowsExactlyAsync<DocumentOpenException>(
-            () => new OfficePdfConverter().ConvertAsync(session, CancellationToken.None));
-        StringAssert.Contains(error.Message, "Clips");
+        byte[] original = Zip(parts);
+        using DocumentSession session = Session(original);
+        using ConvertedPdfDocument converted = await new OfficePdfConverter().ConvertAsync(session, CancellationToken.None);
+        OfdTextPreviewTests.AssertTextOnly(converted, "ABCD");
+        using IDocumentPreview preview = new PdfDocumentPreview(new UnusedPageRenderer(), converted);
+        Assert.AreEqual(converted.Warning, preview.Warning);
+        CollectionAssert.AreEqual(original, File.ReadAllBytes(session.LocalPath));
     }
 
     private sealed class UnusedPageRenderer : IPdfPageRenderer

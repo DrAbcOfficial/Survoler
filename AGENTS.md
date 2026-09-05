@@ -37,6 +37,9 @@ without a concrete requirement.
 - OFD deliberately supports a subset. Skip only explicitly permitted independent
   signature/annotation references with a persistent warning; do not silently drop
   unsupported body graphics or replace failed pages with incomplete images.
+- When rich OFD conversion encounters unsupported features, an explicitly labeled
+  text-only PDF may reflow extractable Unicode with a persistent warning. Never
+  present it as the original layout or use it to bypass package/security limits.
 - Keep PDF font/image resources document-scoped. Do not share mutable native font
   state across conversions; concurrency tests cover prior ToUnicode corruption.
 - When adding formats, update classification, content validation, conversion,

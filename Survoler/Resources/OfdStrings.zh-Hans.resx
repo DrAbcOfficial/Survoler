@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
+  <data name="TextOnlyPreviewWarning" xml:space="preserve"><value>OFD 纯文字预览：已省略原始排版、图片、图形、签章和批注。文字顺序可能不同，部分文字可能无法提取。未验证数字签名。</value></data>
+  <data name="TextOnlyPreviewTitle" xml:space="preserve"><value>OFD 纯文字预览（非原始排版）</value></data>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>

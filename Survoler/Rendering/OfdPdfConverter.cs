@@ -41,9 +41,19 @@ public sealed class OfdPdfConverter
                 if (new FileInfo(session.LocalPath).Length > 64L * 1024 * 1024)
                     throw Invalid("ConversionInputTooLarge");
                 using var package = new OfdPackage(session.LocalPath, token);
-                using var renderer = new Renderer(package, resources, token);
-                renderer.Write(result.Path);
-                result.Warning = renderer.Warning;
+                try
+                {
+                    using var renderer = new Renderer(package, resources, token);
+                    renderer.Write(result.Path);
+                    result.Warning = renderer.Warning;
+                }
+                catch (NotSupportedException exception) when (exception.Data.Contains(OfdStrings.DiagnosticMarker))
+                {
+                    // Start a separate text document, never overlay a failed/partial page rendering.
+                    File.Delete(result.Path);
+                    if (!OfdTextPreview.Write(package, result.Path, resources, token)) throw;
+                    result.Warning = OfdStrings.Get("TextOnlyPreviewWarning");
+                }
             }, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
             return result;
@@ -62,7 +72,7 @@ public sealed class OfdPdfConverter
 
     private sealed record Resource(XElement Element, string BaseFile);
 
-    private sealed class BoundedPdfStream : SKAbstractManagedWStream
+    internal sealed class BoundedPdfStream : SKAbstractManagedWStream
     {
         private const long MaxBytes = 64L * 1024 * 1024;
         private readonly Stream _destination;
@@ -425,8 +435,8 @@ public sealed class OfdPdfConverter
                     throw Invalid("TextBudget");
                 fontText.Append(value);
             }
-            using var font = new SKFont(Typeface(definition, fontText.ToString()), size);
             using var paint = new SKPaint { IsAntialias = true, Color = Color(obj.Element(Ofd + "FillColor"), scope, alpha) };
+            using var font = new SKFont(Typeface(definition, fontText.ToString()), size);
             float? previousX = null, previousY = null;
             foreach (XElement code in codes)
             {
