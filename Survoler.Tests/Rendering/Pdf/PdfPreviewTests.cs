@@ -3,7 +3,6 @@ using OfficeIMO.Pdf;
 using OfficeIMO.Word;
 using Survoler.Documents;
 using Survoler.Rendering;
-using static Survoler.Tests.DocumentOpenCoordinatorTests;
 
 namespace Survoler.Tests;
 

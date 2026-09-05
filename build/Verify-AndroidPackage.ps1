@@ -1,5 +1,7 @@
 param(
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+    [ValidateSet("quiet", "minimal", "normal", "detailed", "diagnostic")]
+    [string]$Verbosity = "minimal"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,7 +15,7 @@ $intermediate = Join-Path $root "Survoler.Android\obj\$Configuration\$framework\
 $manifestPath = Join-Path $intermediate "android\AndroidManifest.xml"
 $apkPath = Join-Path $output "net.drabc.survoler-Signed.apk"
 
-& dotnet publish $project -c $Configuration -f $framework -r $runtime
+& dotnet publish $project -c $Configuration -f $framework -r $runtime --verbosity $Verbosity
 if ($LASTEXITCODE -ne 0) {
     throw "Android publish failed."
 }

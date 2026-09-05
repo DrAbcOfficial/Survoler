@@ -137,7 +137,7 @@ public sealed class LocalizationTests
                 Assert.AreEqual(culture, CultureInfo.CurrentUICulture.Name);
                 Assert.AreEqual("fr-FR", CultureInfo.CurrentCulture.Name);
                 Assert.AreEqual(Expected(Ui, "Previous", expectedCulture), Strings.Previous);
-                using var file = DocumentOpenCoordinatorTests.FakeStorageFile.Create("unsupported.xyz", []);
+                using var file = FakeStorageFile.Create("unsupported.xyz", []);
                 using var coordinator = new DocumentOpenCoordinator();
                 DocumentOpenException error = await Assert.ThrowsExactlyAsync<DocumentOpenException>(() => coordinator.OpenAsync(file));
                 Assert.AreEqual(Expected(Ui, "UnsupportedFileType", expectedCulture), error.Message);
@@ -178,7 +178,7 @@ public sealed class LocalizationTests
     [DataRow("zh-CN", "zh-Hans")]
     public Task InvalidCsvAndEmptyOfdZipReturnLocalizedErrors(string culture, string expectedCulture) => WithCulture(culture, async () =>
     {
-        using var csvFile = DocumentOpenCoordinatorTests.FakeStorageFile.Create("Original.CSV", [0xC3, 0x28]);
+        using var csvFile = FakeStorageFile.Create("Original.CSV", [0xC3, 0x28]);
         using var coordinator = new DocumentOpenCoordinator();
         DocumentSession? csv = await coordinator.OpenAsync(csvFile);
         Assert.IsNotNull(csv);
@@ -190,7 +190,7 @@ public sealed class LocalizationTests
 
         // A real, valid empty ZIP reaches the bounded OFD package reader, not ZIP corruption handling.
         byte[] zip = CreateZip([]);
-        using var ofdFile = DocumentOpenCoordinatorTests.FakeStorageFile.Create("Original.OFD", zip);
+        using var ofdFile = FakeStorageFile.Create("Original.OFD", zip);
         DocumentSession? ofd = await coordinator.OpenAsync(ofdFile);
         Assert.IsNotNull(ofd);
         Assert.AreEqual("Original.OFD", ofd.SourceName);
@@ -239,7 +239,7 @@ public sealed class LocalizationTests
             ("Doc/Res.xml", $"<Res xmlns='{ns}'><Fonts><Font ID='1' FontName='Missing-Test-Font'/></Fonts></Res>"),
             ("Doc/Page.xml", $"<Page xmlns='{ns}'><Content><Layer ID='6'><TextObject ID='10' Boundary='10 20 80 30' Font='1' Size='4'><TextCode X='2' Y='8'>OriginalBody</TextCode></TextObject></Layer></Content></Page>")
         ]);
-        using var file = DocumentOpenCoordinatorTests.FakeStorageFile.Create("Original.OFD", original);
+        using var file = FakeStorageFile.Create("Original.OFD", original);
         using var coordinator = new DocumentOpenCoordinator();
         DocumentSession? session = await coordinator.OpenAsync(file);
         Assert.IsNotNull(session);

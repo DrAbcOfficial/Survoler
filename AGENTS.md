@@ -16,9 +16,14 @@ Keep README.md concise; document detailed compatibility limits in FORMAT_SUPPORT
 
 - `Survoler/`: shared .NET 10 / Avalonia UI, view models, input handling and conversion.
 - `Survoler/Documents/`: extension classification, bounded input copies and sessions.
-- `Survoler/Rendering/`: Office/CSV/OFD to PDF, PDF preview ownership and text maps.
-- `Survoler.Android/`: activation, native PDF rendering, font resources and copy menu.
-- `Survoler.Tests/`: MSTest tests and fixtures.
+- `Survoler/Rendering/`: shared preview contracts and orchestration; `Office/`,
+  `Csv/`, `Ofd/`, and `Pdf/` group format conversion, resources and PDF ownership.
+- `Survoler/Views/Interaction/`: viewport, gesture and text-selection partials.
+- `Survoler/Interaction/`: shared platform interaction contracts.
+- `Survoler.Android/`: activation; `Rendering/`, `Fonts/` and `Interaction/` hold
+  native PDF rendering, font resources and the system copy menu.
+- `Survoler.Tests/`: feature-grouped MSTest tests; `Support/` contains shared test
+  helpers and `TestData/` contains document fixtures.
 - `Directory.Packages.props`: centrally managed package versions.
 - `build/Verify-AndroidPackage.ps1`: Release package, manifest and ABI checks.
 
@@ -60,6 +65,9 @@ dotnet build Survoler.Android/Survoler.Android.csproj
 & "./build/Verify-AndroidPackage.ps1" -Configuration Release
 git diff --check
 ```
+
+For verbose diagnostics, use `--verbosity detailed` on dotnet commands or
+`-Verbosity detailed` on the package verifier. Keep build logs outside the repo.
 
 Use Release for package policy checks; Debug may include development-only network
 permissions. Tests and successful builds do not establish real-device rendering

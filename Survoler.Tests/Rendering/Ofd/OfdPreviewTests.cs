@@ -7,7 +7,6 @@ using OfficeIMO.Pdf;
 using SkiaSharp;
 using Survoler.Documents;
 using Survoler.Rendering;
-using static Survoler.Tests.DocumentOpenCoordinatorTests;
 
 namespace Survoler.Tests;
 
@@ -487,7 +486,7 @@ public sealed class OfdPreviewTests
         if (scenario is "clips" or "glyphs" or "drawparams" or "gradient" or "short-delta")
         {
             using ConvertedPdfDocument converted = await new OfficePdfConverter().ConvertAsync(session, CancellationToken.None);
-            OfdTextPreviewTests.AssertTextOnly(converted, "ABCD");
+            OfdAssertions.AssertTextOnly(converted, "ABCD");
         }
         else
         {
@@ -587,7 +586,7 @@ public sealed class OfdPreviewTests
         byte[] original = Zip(parts);
         using DocumentSession session = Session(original);
         using ConvertedPdfDocument converted = await new OfficePdfConverter().ConvertAsync(session, CancellationToken.None);
-        OfdTextPreviewTests.AssertTextOnly(converted, "ABCD");
+        OfdAssertions.AssertTextOnly(converted, "ABCD");
         using IDocumentPreview preview = new PdfDocumentPreview(new UnusedPageRenderer(), converted);
         Assert.AreEqual(converted.Warning, preview.Warning);
         CollectionAssert.AreEqual(original, File.ReadAllBytes(session.LocalPath));

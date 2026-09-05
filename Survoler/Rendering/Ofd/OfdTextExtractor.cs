@@ -1,23 +1,19 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Xml.Linq;
-using OfficeIMO.Drawing;
-using SkiaSharp;
 using Survoler.Documents;
 using Survoler.Resources;
 
 namespace Survoler.Rendering;
 
-internal static class OfdTextPreview
+internal static class OfdTextExtractor
 {
     private static readonly XNamespace Ofd = "http://www.ofdspec.org/2016";
 
-    internal static bool Write(OfdPackage package, string output,
-        OfficePdfRenderingResources? resources, CancellationToken token)
+    internal static List<List<string>>? Extract(OfdPackage package, CancellationToken token)
     {
         int operations = 0, characters = 0;
         bool hasText = false;
@@ -28,11 +24,11 @@ internal static class OfdTextPreview
             root.Attribute("DocType") is { Value: not "OFD" } ||
             root.Attributes().Any(a => !a.IsNamespaceDeclaration && a.Name != "Version" && a.Name != "DocType") ||
             root.Elements().Any(e => e.Name != Ofd + "DocBody") ||
-            root.Elements(Ofd + "DocBody").Count() != 1) return false;
+            root.Elements(Ofd + "DocBody").Count() != 1) return null;
         XElement body = One(root, "DocBody")!;
         if (body.Attributes().Any(a => !a.IsNamespaceDeclaration) ||
             body.Elements().Any(e => e.Name != Ofd + "DocInfo" && e.Name != Ofd + "DocRoot" &&
-                e.Name != Ofd + "Signatures")) return false;
+                e.Name != Ofd + "Signatures")) return null;
         XElement docRoot = One(body, "DocRoot")!;
         if (docRoot.HasElements) throw Invalid("UnexpectedText", "DocRoot");
         string documentPath = OfdPackage.Resolve("OFD.xml", docRoot.Value.Trim());
@@ -42,7 +38,7 @@ internal static class OfdTextPreview
         if (document.Name != Ofd + "Document" ||
             document.Attributes().Any(a => !a.IsNamespaceDeclaration) ||
             document.Elements().Any(e => e.Name.Namespace != Ofd || !documentChildren.Contains(e.Name.LocalName)))
-            return false;
+            return null;
 
         var templates = new Dictionary<string, (string Path, string Order)>(StringComparer.Ordinal);
         XElement? common = One(document, "CommonData", required: false);
@@ -72,166 +68,7 @@ internal static class OfdTextPreview
             ExtractPage(OfdPackage.Resolve(documentPath, Required(entry, "BaseLoc")), paragraphs, 0);
             textPages.Add(paragraphs);
         }
-        if (!hasText) return false;
-
-        OfficeFontFace[] registered = resources?.Profile.Fonts.Faces
-            .OrderBy(f => f.Style == OfficeFontStyle.Regular ? 0 : 1).ToArray() ?? Array.Empty<OfficeFontFace>();
-        var faces = new List<SKTypeface>();
-        var fonts = new List<SKFont>();
-        var metrics = new Dictionary<int, (SKFont Font, float Width)>();
-        int loadedRegistered = 0;
-        long fontBytes = 0;
-        try
-        {
-            using var file = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            using var stream = new OfdPdfConverter.BoundedPdfStream(file, token);
-            using var pdf = SKDocument.CreatePdf(stream);
-            stream.ThrowIfFailed();
-            if (pdf is null) throw Invalid("PdfWriterUnavailable");
-            using var paint = new SKPaint { IsAntialias = true, Color = SKColors.Black };
-            const float width = 595.2756f, height = 841.8898f, margin = 36, lineHeight = 18;
-            SKCanvas? canvas = null;
-            int outputPages = 0;
-            float x = margin, y = margin + 12, runX = margin;
-            var run = new StringBuilder();
-            SKFont? runFont = null;
-            foreach (List<string> paragraphs in textPages)
-            {
-                BeginPage();
-                foreach (string paragraph in paragraphs.Prepend(OfdStrings.Get("TextOnlyPreviewTitle")))
-                {
-                    bool previousCr = false;
-                    int column = 0;
-                    foreach (Rune rune in paragraph.EnumerateRunes())
-                    {
-                        token.ThrowIfCancellationRequested();
-                        if (rune.Value == '\n' && previousCr) { previousCr = false; continue; }
-                        previousCr = rune.Value == '\r';
-                        if (rune.Value is '\r' or '\n')
-                        {
-                            NewLine();
-                            column = 0;
-                            continue;
-                        }
-                        if (rune.Value == '\t')
-                        {
-                            int spaces = 4 - column % 4;
-                            for (int i = 0; i < spaces; i++) DrawRune(new Rune(' '));
-                        }
-                        else DrawRune(rune);
-                    }
-                    NewLine();
-
-                    void DrawRune(Rune rune)
-                    {
-                        (SKFont font, float advance) = Measure(rune);
-                        if (advance > width - 2 * margin) throw Invalid("CoordinateRange");
-                        if (x + advance > width - margin) { NewLine(); column = 0; }
-                        if (y > height - margin) { EndPage(); BeginPage(); }
-                        if (runFont != font) FlushRun();
-                        if (run.Length == 0) { runFont = font; runX = x; }
-                        run.Append(rune.ToString());
-                        x += advance;
-                        column++;
-                    }
-                }
-                EndPage();
-            }
-            token.ThrowIfCancellationRequested();
-            pdf.Close();
-            stream.Flush();
-            stream.ThrowIfFailed();
-            return true;
-
-            void FlushRun()
-            {
-                if (run.Length == 0) return;
-                canvas!.DrawText(run.ToString(), runX, y, SKTextAlign.Left, runFont!, paint);
-                run.Clear();
-            }
-
-            void NewLine()
-            {
-                if (y > height - margin) { EndPage(); BeginPage(); }
-                FlushRun();
-                x = margin;
-                y += lineHeight;
-            }
-
-            void BeginPage()
-            {
-                token.ThrowIfCancellationRequested();
-                if (++outputPages > PreviewLimits.MaxPdfPages) throw Invalid("PageCount");
-                canvas = pdf.BeginPage(width, height);
-                stream.ThrowIfFailed();
-                x = margin;
-                y = margin + 12;
-            }
-
-            void EndPage()
-            {
-                FlushRun();
-                pdf.EndPage();
-                stream.Flush();
-                stream.ThrowIfFailed();
-            }
-
-            (SKFont Font, float Width) Measure(Rune rune)
-            {
-                if (metrics.TryGetValue(rune.Value, out var result)) return result;
-                string text = rune.ToString();
-                SKFont? font = fonts.FirstOrDefault(f => f.ContainsGlyphs(text));
-                while (font is null && loadedRegistered < registered.Length)
-                {
-                    byte[] bytes = registered[loadedRegistered++].Data;
-                    ReserveFontBytes(bytes.Length);
-                    using SKData data = SKData.CreateCopy(bytes);
-                    SKFont candidate = Own(SKTypeface.FromData(data) ?? throw Invalid("FontLoadFailed"));
-                    if (candidate.ContainsGlyphs(text)) font = candidate;
-                }
-                if (font is null && registered.Length == 0 && !OperatingSystem.IsAndroid())
-                {
-                    // Matched native faces are byte sources only: shared faces corrupt concurrent ToUnicode maps.
-                    using SKTypeface matched = SKFontManager.Default.MatchCharacter(rune.Value)
-                        ?? throw Invalid("NoFontCoverage");
-                    using SKStreamAsset source = matched.OpenStream(out int collectionIndex)
-                        ?? throw Invalid("FallbackFontReadFailed");
-                    ReserveFontBytes(source.Length);
-                    using SKData data = SKData.Create(source) ?? throw Invalid("FallbackFontLoadFailed");
-                    font = Own(SKTypeface.FromData(data, collectionIndex) ?? throw Invalid("FallbackFontLoadFailed"));
-                }
-                if (font is null || !font.ContainsGlyphs(text)) throw Invalid("NoFontCoverage");
-                float advance = font.MeasureText(text, paint);
-                if (!float.IsFinite(advance) || advance < 0) throw Invalid("CoordinateRange");
-                result = (font, advance);
-                metrics.Add(rune.Value, result);
-                return result;
-            }
-        }
-        finally
-        {
-            foreach (SKFont font in fonts) font.Dispose();
-            foreach (SKTypeface face in faces) face.Dispose();
-        }
-
-        SKFont Own(SKTypeface face)
-        {
-            faces.Add(face);
-            var font = new SKFont(face, 12);
-            fonts.Add(font);
-            SKFontMetrics dimensions = font.Metrics;
-            if (!float.IsFinite(dimensions.Ascent) || !float.IsFinite(dimensions.Descent) ||
-                !float.IsFinite(dimensions.Leading) || dimensions.Ascent > 0 || dimensions.Descent < 0 ||
-                dimensions.Descent - dimensions.Ascent > 14400) throw Invalid("CoordinateRange");
-            return font;
-        }
-
-        void ReserveFontBytes(long count)
-        {
-            token.ThrowIfCancellationRequested();
-            if (count <= 0 || count > 64L * 1024 * 1024 - fontBytes) throw Invalid("FontBudget");
-            fontBytes += count;
-        }
+        return hasText ? textPages : null;
 
         void Tick()
         {

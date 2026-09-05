@@ -13,7 +13,6 @@ using OfficeIMO.Word;
 using Survoler.Documents;
 using Survoler.Rendering;
 using Survoler.Resources;
-using static Survoler.Tests.DocumentOpenCoordinatorTests;
 
 namespace Survoler.Tests;
 
@@ -245,12 +244,12 @@ public sealed class DocumentFixtureTests
         Assert.IsNotNull(session);
         Assert.IsGreaterThan(0, englishMarkers.Count);
         using ConvertedPdfDocument converted = await new OfficePdfConverter().ConvertAsync(session, CancellationToken.None);
-        OfdTextPreviewTests.AssertTextOnly(converted, [Title, .. englishMarkers]);
+        OfdAssertions.AssertTextOnly(converted, [Title, .. englishMarkers]);
         PdfReadDocument pdf = PdfReadDocument.Open(converted.Path);
         Assert.IsGreaterThanOrEqualTo(2, pdf.Pages.Count, "Two original pages may reflow to more PDF pages.");
         Assert.IsGreaterThanOrEqualTo(2, Regex.Matches(Regex.Replace(pdf.ExtractText(), @"\s", ""), Title).Count);
         byte[] output = File.ReadAllBytes(converted.Path);
-        using IDocumentPreview preview = new PdfDocumentPreview(new OfdTextPreviewTests.UnusedRenderer(), converted);
+        using IDocumentPreview preview = new PdfDocumentPreview(new OfdAssertions.UnusedRenderer(), converted);
         Assert.AreEqual(converted.Warning, preview.Warning);
         CollectionAssert.AreEqual(original, File.ReadAllBytes(session.LocalPath));
         coordinator.Dispose();

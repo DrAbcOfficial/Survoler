@@ -148,7 +148,7 @@ public sealed class CsvPreviewTests
     {
         const string sourceName = "report.CSV";
         byte[] original = "Preview marker,00123\r\nsecond,=1+1\r\n"u8.ToArray();
-        using IStorageFile file = DocumentOpenCoordinatorTests.FakeStorageFile.Create(sourceName, original);
+        using IStorageFile file = FakeStorageFile.Create(sourceName, original);
         using var coordinator = new DocumentOpenCoordinator();
         DocumentSession? session = await coordinator.OpenAsync(file);
 
