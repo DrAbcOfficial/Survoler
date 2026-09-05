@@ -31,8 +31,6 @@ public sealed class PdfDocumentPreview : IDocumentPreview
 
     public Bitmap PageImage { get; private set; } = null!;
 
-    public string? WarningText => _document.WarningText;
-
     public IReadOnlyList<string> NavigationItems => _navigationItems;
 
     public int SelectedIndex { get; private set; }

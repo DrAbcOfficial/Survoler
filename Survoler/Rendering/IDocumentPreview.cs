@@ -10,8 +10,6 @@ public interface IDocumentPreview : IDisposable
 {
     Bitmap PageImage { get; }
 
-    string? WarningText { get; }
-
     IReadOnlyList<string> NavigationItems { get; }
 
     int SelectedIndex { get; }

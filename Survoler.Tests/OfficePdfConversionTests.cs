@@ -52,10 +52,6 @@ public sealed class OfficePdfConversionTests
         Assert.IsGreaterThan(0, pdf.Pages.Count);
         StringAssert.Contains(pdf.ExtractText(), expectedText);
 
-        if (session.Kind.IsLegacy())
-        {
-            Assert.IsFalse(string.IsNullOrWhiteSpace(converted.WarningText));
-        }
     }
 
     private sealed class TestSession : IDisposable

@@ -52,6 +52,7 @@ public sealed class AndroidOfficePdfRenderingResourcesProvider : IOfficePdfRende
                 (OfficeFontStyle.Regular,
                     new[]
                     {
+                        "SysSans-Hans-Regular.ttf", "OSans-RC-Regular.ttf",
                         "NotoSansCJK-Regular.ttc", "NotoSansCJK-VF.ttf",
                         "NotoSansSC-Regular.otf", "DroidSansFallback.ttf"
                     })))
@@ -104,12 +105,17 @@ public sealed class AndroidOfficePdfRenderingResourcesProvider : IOfficePdfRende
         {
             foreach (string path in EnumerateFonts(fileNames))
             {
-                try
+            try
+            {
+                byte[] data = File.ReadAllBytes(path);
+                if (!fonts.TryAdd(familyName, data, style) &&
+                    (!AndroidTrueTypeCollectionExtractor.TryExtractPreferredFace(
+                        path,
+                        out byte[]? extracted) ||
+                     !fonts.TryAdd(familyName, extracted, style)))
                 {
-                    if (!fonts.TryAdd(familyName, File.ReadAllBytes(path), style))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
                     if (style == OfficeFontStyle.Regular)
                     {

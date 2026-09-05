@@ -48,10 +48,10 @@ public sealed class OfficePdfConverter
                         "This device has no PDF-embeddable font for some document characters.");
                 }
 
-                throw new DocumentOpenException("OfficeIMO could not convert this document to PDF.");
+                throw new DocumentOpenException("The document could not be converted to PDF.");
             }
 
-            return new ConvertedPdfDocument(pdfPath, CreateWarningText(session, result));
+            return new ConvertedPdfDocument(pdfPath);
         }
         catch
         {
@@ -99,6 +99,7 @@ public sealed class OfficePdfConverter
 
         var options = new WordPdfSaveOptions();
         options.UseProfile(PdfExportProfile.Faithful);
+        options.TextFallbacks |= PdfTextFallbackFeatures.MultilingualFonts;
         options.ResourcePolicy = CreateResourcePolicy();
         ApplyRenderingResources(options, resources);
         return document.TrySaveAsPdf(pdfPath, options);
@@ -120,6 +121,7 @@ public sealed class OfficePdfConverter
 
         var options = new ExcelPdfSaveOptions();
         options.UseProfile(PdfExportProfile.Faithful);
+        options.TextFallbacks |= PdfTextFallbackFeatures.MultilingualFonts;
         options.ResourcePolicy = CreateResourcePolicy();
         ApplyRenderingResources(options, resources);
         return document.TrySaveAsPdf(pdfPath, options);
@@ -141,6 +143,7 @@ public sealed class OfficePdfConverter
 
         var options = new PowerPointPdfSaveOptions();
         options.UseProfile(PdfExportProfile.Faithful);
+        options.TextFallbacks |= PdfTextFallbackFeatures.MultilingualFonts;
         options.ResourcePolicy = CreateResourcePolicy();
         ApplyRenderingResources(options, resources);
         return document.TrySaveAsPdf(pdfPath, options);
@@ -193,26 +196,6 @@ public sealed class OfficePdfConverter
                 substitution.Value,
                 PdfFontFamilySubstitutionImpact.LayoutSensitive);
         }
-    }
-
-    private static string? CreateWarningText(DocumentSession session, PdfSaveResult result)
-    {
-        var warnings = new List<string>(3);
-        if (session.IsLegacy)
-        {
-            warnings.Add("Legacy Office conversion may omit unsupported binary content.");
-        }
-
-        if (result.HasLoss)
-        {
-            warnings.Add("OfficeIMO detected content or layout that may not be reproduced exactly.");
-        }
-        else if (result.HasWarnings)
-        {
-            warnings.Add("OfficeIMO applied font or layout substitutions while creating the PDF.");
-        }
-
-        return warnings.Count == 0 ? null : string.Join(" ", warnings);
     }
 
     private static void TryDelete(string path)

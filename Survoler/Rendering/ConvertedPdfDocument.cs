@@ -8,15 +8,12 @@ public sealed class ConvertedPdfDocument : IDisposable
 {
     private int _disposed;
 
-    public ConvertedPdfDocument(string path, string? warningText)
+    public ConvertedPdfDocument(string path)
     {
         Path = path;
-        WarningText = warningText;
     }
 
     public string Path { get; }
-
-    public string? WarningText { get; }
 
     public void Dispose()
     {

@@ -19,6 +19,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private int _openVersion;
     private CancellationTokenSource? _previewCancellation;
     private CancellationTokenSource? _navigationCancellation;
+    private CancellationTokenSource? _warningCancellation;
     private IDocumentPreview? _preview;
     private bool _settingNavigationIndex;
 
@@ -49,9 +50,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public partial bool IsLoading { get; set; }
 
     [ObservableProperty]
-    public partial bool IsLegacy { get; set; }
-
-    [ObservableProperty]
     public partial DocumentSession? Session { get; set; }
 
     [ObservableProperty]
@@ -65,6 +63,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     public partial bool HasPreviewWarning { get; set; }
+
+    [ObservableProperty]
+    public partial double WarningBannerMaxHeight { get; set; }
+
+    [ObservableProperty]
+    public partial double WarningBannerOpacity { get; set; }
 
     [ObservableProperty]
     public partial bool IsStatusVisible { get; set; } = true;
@@ -103,6 +107,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ref _navigationCancellation,
             null);
         navigationCancellation?.Cancel();
+        CancellationTokenSource? warningCancellation = Interlocked.Exchange(
+            ref _warningCancellation,
+            null);
+        warningCancellation?.Cancel();
+        warningCancellation?.Dispose();
         IDocumentPreview? preview = Interlocked.Exchange(ref _preview, null);
         if (navigationCancellation is null)
         {
@@ -115,11 +124,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         HasPreview = value is not null;
         IsStatusVisible = !HasPreview;
-    }
-
-    partial void OnPreviewWarningChanged(string? value)
-    {
-        HasPreviewWarning = !string.IsNullOrWhiteSpace(value);
     }
 
     partial void OnSelectedNavigationIndexChanged(int value)
@@ -169,7 +173,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         previousNavigation?.Cancel();
         IDocumentPreview? previousPreview = Interlocked.Exchange(ref _preview, null);
         PreviewImage = null;
-        PreviewWarning = null;
+        ShowPreviewWarning(null);
         if (previousNavigation is null)
         {
             previousPreview?.Dispose();
@@ -200,7 +204,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
 
             Session = session;
-            IsLegacy = session.IsLegacy;
             StatusText = "Converting document to PDF...";
 
             IDocumentPreview preview = await _previewService.CreateAsync(
@@ -216,7 +219,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             _preview = preview;
             PreviewImage = preview.PageImage;
-            PreviewWarning = preview.WarningText;
             SetNavigation(preview.NavigationItems, preview.SelectedIndex);
             LoadProgress = 1;
             StatusText = string.Empty;
@@ -284,7 +286,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
 
             PreviewImage = image;
-            PreviewWarning = preview.WarningText;
             SetNavigation(preview.NavigationItems, preview.SelectedIndex);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
@@ -294,7 +295,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             if (ReferenceEquals(_preview, expectedPreview))
             {
-                PreviewWarning = "This PDF page could not be rendered.";
+                ShowPreviewWarning("This PDF page could not be rendered.");
             }
         }
         finally
@@ -329,5 +330,54 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             : string.Empty;
         CanNavigatePrevious = selectedIndex > 0;
         CanNavigateNext = selectedIndex >= 0 && selectedIndex < items.Count - 1;
+    }
+
+    private void ShowPreviewWarning(string? message)
+    {
+        CancellationTokenSource? previous = Interlocked.Exchange(ref _warningCancellation, null);
+        previous?.Cancel();
+
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            PreviewWarning = null;
+            HasPreviewWarning = false;
+            WarningBannerMaxHeight = 0;
+            WarningBannerOpacity = 0;
+            return;
+        }
+
+        PreviewWarning = message;
+        HasPreviewWarning = true;
+        WarningBannerMaxHeight = 160;
+        WarningBannerOpacity = 1;
+
+        var cancellation = new CancellationTokenSource();
+        _warningCancellation = cancellation;
+        _ = HidePreviewWarningAsync(cancellation);
+    }
+
+    private async Task HidePreviewWarningAsync(CancellationTokenSource cancellation)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3), cancellation.Token);
+            WarningBannerMaxHeight = 0;
+            WarningBannerOpacity = 0;
+            await Task.Delay(TimeSpan.FromMilliseconds(250), cancellation.Token);
+
+            if (ReferenceEquals(_warningCancellation, cancellation))
+            {
+                PreviewWarning = null;
+                HasPreviewWarning = false;
+            }
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            Interlocked.CompareExchange(ref _warningCancellation, null, cancellation);
+            cancellation.Dispose();
+        }
     }
 }

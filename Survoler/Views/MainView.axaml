@@ -8,7 +8,7 @@
               x:DataType="vm:MainViewModel">
     <Grid Background="#F2EFE7" RowDefinitions="Auto,Auto,Auto,*">
         <Border Grid.Row="0" Background="#152B2A" Padding="20,16">
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid>
                 <StackPanel Spacing="3">
                     <TextBlock Text="SURVOLER"
                                FontSize="12"
@@ -21,17 +21,6 @@
                                Foreground="White"
                                TextTrimming="CharacterEllipsis" />
                 </StackPanel>
-                <Border Grid.Column="1"
-                        IsVisible="{Binding IsLegacy}"
-                        Background="#D6A84B"
-                        CornerRadius="4"
-                        Padding="8,4"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="COMPATIBILITY"
-                               FontSize="10"
-                               FontWeight="Bold"
-                               Foreground="#272116" />
-                </Border>
             </Grid>
         </Border>
 
@@ -75,7 +64,16 @@
                 Background="#F3D78B"
                 BorderBrush="#C79C38"
                 BorderThickness="0,0,0,1"
+                ClipToBounds="True"
+                MaxHeight="{Binding WarningBannerMaxHeight}"
+                Opacity="{Binding WarningBannerOpacity}"
                 Padding="14,9">
+            <Border.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="MaxHeight" Duration="0:0:0.25" />
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.25" />
+                </Transitions>
+            </Border.Transitions>
             <TextBlock Text="{Binding PreviewWarning}"
                        Foreground="#42340F"
                        FontSize="12"
