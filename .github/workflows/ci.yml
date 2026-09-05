@@ -27,13 +27,19 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
+
+      - name: Install test rendering dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libfontconfig1 fontconfig fonts-dejavu-core fonts-noto-cjk
+          fc-cache -f
 
       - name: Restore Android workload
         run: dotnet workload restore Survoler.Android/Survoler.Android.csproj
 
       - name: Restore projects
-        run: dotnet restore Survoler.Tests/Survoler.Tests.csproj
+        run: dotnet restore Survoler.slnx
 
       - name: Run tests
         run: dotnet test Survoler.Tests/Survoler.Tests.csproj --configuration Release --no-restore

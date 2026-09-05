@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="MSTest" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
