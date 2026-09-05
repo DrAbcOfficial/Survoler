@@ -24,6 +24,8 @@ namespace Survoler.Android;
     {
         "application/msword",
         "application/pdf",
+        "application/ofd",
+        "application/vnd.ofd",
         "text/csv",
         "text/comma-separated-values",
         "application/csv",

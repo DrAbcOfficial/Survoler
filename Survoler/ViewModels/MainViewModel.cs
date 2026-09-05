@@ -40,7 +40,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     [ObservableProperty]
-    public partial string StatusText { get; set; } = "Open an Office, CSV or PDF file to preview it.";
+    public partial string StatusText { get; set; } = "Open an Office, CSV, PDF or OFD file to preview it.";
 
     [ObservableProperty]
     public partial string FileName { get; set; } = string.Empty;
@@ -233,6 +233,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             _preview = preview;
             PreviewImage = preview.PageImage;
+            ShowPreviewWarning(preview.Warning);
             SetNavigation(preview.NavigationItems, preview.SelectedIndex);
             BeginLoadInteractionMap(preview, preview.SelectedIndex);
             LoadProgress = 1;
@@ -307,6 +308,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             PreviewImage = image;
             SetNavigation(preview.NavigationItems, preview.SelectedIndex);
+            ShowPreviewWarning(preview.Warning);
             BeginLoadInteractionMap(preview, preview.SelectedIndex);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
@@ -395,6 +397,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         CancellationTokenSource? previous = Interlocked.Exchange(ref _warningCancellation, null);
         previous?.Cancel();
 
+        string? documentWarning = _preview?.Warning;
+        if (!string.IsNullOrWhiteSpace(documentWarning) && message != documentWarning)
+        {
+            message = string.IsNullOrWhiteSpace(message) ? documentWarning : documentWarning + "\n" + message;
+        }
+
         if (string.IsNullOrWhiteSpace(message))
         {
             PreviewWarning = null;
@@ -408,6 +416,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HasPreviewWarning = true;
         WarningBannerMaxHeight = 160;
         WarningBannerOpacity = 1;
+
+        // Incomplete-document notices must remain visible for the lifetime of the preview.
+        if (!string.IsNullOrWhiteSpace(documentWarning)) return;
 
         var cancellation = new CancellationTokenSource();
         _warningCancellation = cancellation;

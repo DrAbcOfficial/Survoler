@@ -44,6 +44,8 @@ public sealed class OfficeFileKindsTests
     [DataRow("report.CSV", OfficeFileKind.Csv, OfficeDocumentFamily.Spreadsheet, false)]
     [DataRow("report.pdf", OfficeFileKind.Pdf, OfficeDocumentFamily.Pdf, false)]
     [DataRow("report.PDF", OfficeFileKind.Pdf, OfficeDocumentFamily.Pdf, false)]
+    [DataRow("report.ofd", OfficeFileKind.Ofd, OfficeDocumentFamily.Ofd, false)]
+    [DataRow("report.OFD", OfficeFileKind.Ofd, OfficeDocumentFamily.Ofd, false)]
     public void RecognizesSupportedExtensions(
         string fileName,
         OfficeFileKind expectedKind,

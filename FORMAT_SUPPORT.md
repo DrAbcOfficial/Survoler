@@ -1,5 +1,86 @@
 # Document Format Support
 
+## OFD
+
+OFD (`.ofd`, case-insensitive) follows the same preview pipeline as Office files:
+bounded OFD ZIP/XML parsing -> a temporary PDF -> the existing Android PDF viewer
+and PDF text interaction map. Android registers `application/ofd` and
+`application/vnd.ofd`. A ZIP signature alone is not enough: conversion requires
+`OFD.xml`, the OFD 2016 namespace, and valid referenced document/page resources.
+
+This is an explicitly restricted static-preview implementation, not full OFD
+conformance. It uses the existing SkiaSharp 3.119.4 stack as a PDF writer, with a
+direct package reference pinned to Avalonia's version. It does not add Docnet,
+PDFium, PdfSharpCore, a WebView, or a separate OFD bitmap/selection backend. No
+LibreOffice or ofdrw.net implementation source is incorporated.
+
+Supported content:
+
+- One DocBody, multiple pages with physical page boxes, page origins, document
+  and page resources, and background/foreground templates with cycle detection.
+- Filled Unicode text, font resources, TrueType font data, registered Android
+  font substitutions/fallbacks, explicit or inherited TextCode positions, bounded
+  DeltaX/DeltaY repetition, and CTM transformations. Text remains selectable in PDF.
+  Missing glyphs fail conversion instead of silently drawing replacement boxes.
+- Solid 8-bit RGB/Gray paths, lines, cubic/quadratic curves, elliptical arcs,
+  closed subpaths, fill rules, basic cap/join styling, alpha and object transforms.
+  `S` starts and initial `M` starts are accepted. An `M` within an unclosed
+  subpath is rejected rather than guessing its closure semantics.
+- PNG/JPEG images, unit-square image placement through CTM, alpha, and object
+  Boundary clipping. Repeated image references reuse a decoded resource.
+- Font and image objects have document-local lifetimes. In particular, the PDF
+  writer does not share the native default typeface across concurrent conversions,
+  avoiding the ToUnicode corruption reproduced by concurrency tests.
+
+Independent DocBody `Signatures` and Document `Annotations` references are skipped
+without resolving, reading, rendering or verifying their referenced content.
+Missing or malformed overlay files therefore do not block an otherwise supported
+page body. The preview displays a persistent partial-preview warning describing
+the skipped content and stating that digital signatures have not been verified.
+Signature/seal and annotation appearances will be absent. Ordinary page-body
+images (including a seal already flattened into a body image) are not removed.
+ZIP-level limits and the main XML safety checks still apply to the package.
+
+Other unsupported content fails explicitly and deletes the incomplete PDF;
+there is no image-only fallback that silently removes text or vector objects:
+
+- Attachments, encryption, and multiple DocBody documents. A signed OFD can now
+  preview its supported body, but skipping overlays does not enable unsupported
+  body graphics or other document features. Showing or validating independent
+  electronic seals is not claimed.
+- CGTransform glyph mappings, composite objects, DrawParam resources/inheritance,
+  gradients/patterns, arbitrary Clips, stroked text, unimplemented writing/shaping
+  attributes and non-default image EXIF orientation.
+- JBIG2, JPEG 2000, animated images, and other image codecs. Embedded CFF-only
+  fonts are not supported. Complex script shaping is not implemented.
+- Short explicit delta lists are rejected when they cannot provide every
+  inter-character displacement; lists with one trailing displacement are allowed.
+- Unknown XML visual elements/attributes are rejected rather than discarded.
+  Compatibility with arbitrary producer-specific metadata is not guaranteed.
+
+Safety budgets:
+
+- 64 MiB input and generated PDF; 10,000 ZIP entries; 32 MiB per entry; 256 MiB
+  declared expansion/cumulative reads; compression ratio at most 200.
+- At most 8 MiB per XML source and 16 MiB cumulative XML source, depth 64,
+  64 attributes per node and 200,000 XML nodes/attributes before DOM construction.
+  DTDs and external XML resolution are disabled. Resource paths stay inside the
+  archive; files are not extracted into caller-controlled filesystem paths.
+- 2,000 pages, 100,000 processing/object operations, one million text characters,
+  bounded delta expansion and finite coordinates. Physical pages are limited to
+  14,400 PDF points on either axis.
+- Five million pixels per decoded image, 16 million decoded pixels across cached
+  images, 10,000 image draws and 64 MiB loaded font data. Limits do not make native
+  font/image parsing fully interruptible or establish a security sandbox.
+
+`OfdPreviewTests` generates packages and verifies PDF text, interaction-map
+positions, transforms, path geometry, page sizes/origins, template order,
+embedded/registered fonts, Unicode, image reuse, independent temporary-file
+ownership, rejection limits, skipped overlay references/warning propagation and
+concurrent PDF generation. These are not a
+reference-image conformance suite or Android device tests; real signed/complex
+OFD documents require further feature work and corpus validation.
+
 ## PDF
 
 PDF files (`.pdf`, case-insensitive) open directly through Android's native PDF

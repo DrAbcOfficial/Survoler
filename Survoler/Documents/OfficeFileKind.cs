@@ -12,7 +12,8 @@ public enum OfficeFileKind
     Ppt,
     Pptx,
     Csv,
-    Pdf
+    Pdf,
+    Ofd
 }
 
 public enum OfficeDocumentFamily
@@ -20,7 +21,8 @@ public enum OfficeDocumentFamily
     Word,
     Spreadsheet,
     Presentation,
-    Pdf
+    Pdf,
+    Ofd
 }
 
 public static class OfficeFileKinds
@@ -38,13 +40,14 @@ public static class OfficeFileKinds
             ".pptx" or ".pptm" => OfficeFileKind.Pptx,
             ".csv" => OfficeFileKind.Csv,
             ".pdf" => OfficeFileKind.Pdf,
+            ".ofd" => OfficeFileKind.Ofd,
             _ => default
         };
 
         return extension is
             ".doc" or ".docx" or ".xls" or ".xlsx" or ".ppt" or ".pptx" or
             ".wps" or ".wpt" or ".et" or ".ett" or ".dps" or ".dpt" or
-            ".xlsm" or ".xlt" or ".xltm" or ".dot" or ".dotx" or ".xla" or ".xlam" or ".pptm" or ".csv" or ".pdf";
+            ".xlsm" or ".xlt" or ".xltm" or ".dot" or ".dotx" or ".xla" or ".xlam" or ".pptm" or ".csv" or ".pdf" or ".ofd";
     }
 
     public static OfficeDocumentFamily GetFamily(this OfficeFileKind kind) => kind switch
@@ -53,6 +56,7 @@ public static class OfficeFileKinds
         OfficeFileKind.Xls or OfficeFileKind.Xlsx or OfficeFileKind.Csv => OfficeDocumentFamily.Spreadsheet,
         OfficeFileKind.Ppt or OfficeFileKind.Pptx => OfficeDocumentFamily.Presentation,
         OfficeFileKind.Pdf => OfficeDocumentFamily.Pdf,
+        OfficeFileKind.Ofd => OfficeDocumentFamily.Ofd,
         _ => throw new ArgumentOutOfRangeException(nameof(kind))
     };
 

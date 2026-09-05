@@ -15,6 +15,8 @@ public interface IDocumentPreview : IDisposable
 
     int SelectedIndex { get; }
 
+    string? Warning { get; }
+
     Task<Bitmap> SelectAsync(int index, CancellationToken cancellationToken);
 
     Task<PdfPageInteractionMap?> GetInteractionMapAsync(

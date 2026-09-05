@@ -41,6 +41,8 @@ public sealed class PdfDocumentPreview : IDocumentPreview
 
     public int SelectedIndex { get; private set; }
 
+    public string? Warning => _document.Warning;
+
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
         PageImage = await SelectAsync(0, cancellationToken);

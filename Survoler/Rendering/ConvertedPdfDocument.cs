@@ -16,6 +16,8 @@ public sealed class ConvertedPdfDocument : IDisposable
 
     public string Path { get; }
 
+    public string? Warning { get; internal set; }
+
     public static async Task<ConvertedPdfDocument> CopyFromAsync(
         string sourcePath, CancellationToken cancellationToken)
     {

@@ -13,5 +13,6 @@
         <PackageVersion Include="OfficeIMO.Excel.Pdf" Version="3.3.0" />
         <PackageVersion Include="OfficeIMO.PowerPoint.Pdf" Version="3.3.0" />
         <PackageVersion Include="OfficeIMO.Word.Pdf" Version="3.3.0" />
+        <PackageVersion Include="SkiaSharp" Version="3.119.4" />
     </ItemGroup>
 </Project>

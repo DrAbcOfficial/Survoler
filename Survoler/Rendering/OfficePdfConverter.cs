@@ -30,6 +30,14 @@ public sealed class OfficePdfConverter
         DocumentSession session,
         CancellationToken cancellationToken)
     {
+        if (session.Kind == OfficeFileKind.Ofd)
+        {
+            OfficePdfRenderingResources? resources = await Task.Run(
+                () => _resourcesProvider?.GetResources(), cancellationToken);
+            return await new OfdPdfConverter().ConvertAsync(
+                session, resources, cancellationToken);
+        }
+
         string cacheDirectory = Path.Combine(Path.GetTempPath(), "survoler");
         Directory.CreateDirectory(cacheDirectory);
         string pdfPath = Path.Combine(cacheDirectory, $"{session.Id:N}.pdf");
