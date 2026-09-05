@@ -24,6 +24,22 @@ public sealed class OfficeFileKindsTests
     [DataRow("report.DPS", OfficeFileKind.Ppt, OfficeDocumentFamily.Presentation, true)]
     [DataRow("report.dpt", OfficeFileKind.Ppt, OfficeDocumentFamily.Presentation, true)]
     [DataRow("report.DpT", OfficeFileKind.Ppt, OfficeDocumentFamily.Presentation, true)]
+    [DataRow("report.xlsm", OfficeFileKind.Xlsx, OfficeDocumentFamily.Spreadsheet, false)]
+    [DataRow("report.XLSM", OfficeFileKind.Xlsx, OfficeDocumentFamily.Spreadsheet, false)]
+    [DataRow("report.xlt", OfficeFileKind.Xls, OfficeDocumentFamily.Spreadsheet, true)]
+    [DataRow("report.XLT", OfficeFileKind.Xls, OfficeDocumentFamily.Spreadsheet, true)]
+    [DataRow("report.xltm", OfficeFileKind.Xlsx, OfficeDocumentFamily.Spreadsheet, false)]
+    [DataRow("report.XLTM", OfficeFileKind.Xlsx, OfficeDocumentFamily.Spreadsheet, false)]
+    [DataRow("report.dot", OfficeFileKind.Doc, OfficeDocumentFamily.Word, true)]
+    [DataRow("report.DOT", OfficeFileKind.Doc, OfficeDocumentFamily.Word, true)]
+    [DataRow("report.dotx", OfficeFileKind.Docx, OfficeDocumentFamily.Word, false)]
+    [DataRow("report.DOTX", OfficeFileKind.Docx, OfficeDocumentFamily.Word, false)]
+    [DataRow("report.xla", OfficeFileKind.Xls, OfficeDocumentFamily.Spreadsheet, true)]
+    [DataRow("report.XLA", OfficeFileKind.Xls, OfficeDocumentFamily.Spreadsheet, true)]
+    [DataRow("report.xlam", OfficeFileKind.Xlsx, OfficeDocumentFamily.Spreadsheet, false)]
+    [DataRow("report.XLAM", OfficeFileKind.Xlsx, OfficeDocumentFamily.Spreadsheet, false)]
+    [DataRow("report.pptm", OfficeFileKind.Pptx, OfficeDocumentFamily.Presentation, false)]
+    [DataRow("report.PPTM", OfficeFileKind.Pptx, OfficeDocumentFamily.Presentation, false)]
     public void RecognizesSupportedExtensions(
         string fileName,
         OfficeFileKind expectedKind,
